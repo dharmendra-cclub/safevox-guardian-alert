@@ -1,53 +1,99 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Volume2 } from 'lucide-react';
+import { ArrowLeft, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import MapView from '@/components/MapView';
 import SOSButton from '@/components/SOSButton';
 import BottomNavBar from '@/components/BottomNavBar';
-import Logo from '@/components/Logo';
+import { sosService } from '@/services/SOSService';
+import { toast } from 'sonner';
 
 const Drive: React.FC = () => {
   const navigate = useNavigate();
   const [volume, setVolume] = useState([70]);
-  const [isDriving, setIsDriving] = useState(false);
+  const [isDriving, setIsDriving] = useState(true);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  // Auto-enable driving mode and get location
+  useEffect(() => {
+    // Set driving mode to true when component mounts
+    setIsDriving(true);
+    toast.success('Driving mode activated');
+    
+    // Start "accident detection" simulation
+    startAccidentDetection();
+
+    // Get current location
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast.error("Could not get your location. Please check permissions.");
+      }
+    );
+
+    return () => {
+      // Clear any timers or listeners when component unmounts
+      stopAccidentDetection();
+    };
+  }, []);
+
+  const startAccidentDetection = () => {
+    console.log('Started accident detection simulation');
+    // In a real app, this would use the device's accelerometer and gyroscope
+    // to detect sudden changes in acceleration that might indicate an accident
+  };
+
+  const stopAccidentDetection = () => {
+    console.log('Stopped accident detection simulation');
+  };
 
   const handleSOSPress = () => {
+    sosService.activate();
     navigate('/sos-activated');
   };
 
   const toggleDriving = () => {
-    setIsDriving(!isDriving);
+    if (isDriving) {
+      setIsDriving(false);
+      stopAccidentDetection();
+      toast.info('Driving mode deactivated');
+    } else {
+      setIsDriving(true);
+      startAccidentDetection();
+      toast.success('Driving mode activated');
+    }
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="bg-safevox-primary p-4 flex items-center justify-between">
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white"
-            onClick={() => navigate('/home')}
-          >
-            <ArrowLeft size={20} />
-          </Button>
-          <h1 className="ml-2 text-lg font-semibold text-white">Driving Mode</h1>
-        </div>
-        
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" className="text-white">
-            <Search size={20} />
-          </Button>
-        </div>
+      <div className="bg-safevox-primary p-4 flex items-center justify-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-white absolute left-2"
+          onClick={() => navigate('/home')}
+        >
+          <ArrowLeft size={20} />
+        </Button>
+        <h1 className="text-lg font-semibold text-white">Driving Mode</h1>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 relative">
-        <MapView satelliteView={false} showMarker={true} />
+        <MapView 
+          satelliteView={false} 
+          showMarker={true}
+          initialLocation={userLocation || undefined}
+        />
         
         {/* Volume Control */}
         <div className="absolute top-4 left-4 right-4 bg-card/80 backdrop-blur-sm rounded-lg p-3 flex items-center">
@@ -62,7 +108,7 @@ const Drive: React.FC = () => {
         </div>
         
         {/* Drive Status */}
-        <div className="absolute bottom-20 left-4 right-4 bg-card/80 backdrop-blur-sm rounded-lg p-3">
+        <div className="absolute bottom-0 left-0 right-0 bg-card/80 backdrop-blur-sm p-3">
           <p className="text-center text-sm mb-2">
             {isDriving 
               ? 'Driving mode active. Accident detection enabled.' 
@@ -72,7 +118,7 @@ const Drive: React.FC = () => {
             className={`w-full ${isDriving ? 'bg-orange-500 hover:bg-orange-600' : 'bg-safevox-primary hover:bg-safevox-primary/90'}`}
             onClick={toggleDriving}
           >
-            {isDriving ? 'Stop Driving' : 'Start Driving'}
+            {isDriving ? 'Exit Driving Mode' : 'Start Driving'}
           </Button>
         </div>
         

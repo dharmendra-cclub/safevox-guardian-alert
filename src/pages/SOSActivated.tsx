@@ -14,6 +14,7 @@ const SOSActivated: React.FC = () => {
   const { user } = useAuth();
   const [secondsActive, setSecondsActive] = useState(0);
   const [contactsCount, setContactsCount] = useState(0);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   
   // Set user ID for services
   useEffect(() => {
@@ -30,6 +31,19 @@ const SOSActivated: React.FC = () => {
       sosService.fetchEmergencyContacts().then((contacts) => {
         setContactsCount(contacts.length);
       });
+
+      // Get current location
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+        }
+      );
     }
   }, [user]);
   
@@ -73,9 +87,9 @@ const SOSActivated: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Emergency Banner */}
-      <div className="bg-safevox-sos p-4 flex flex-col items-center">
-        <AlertTriangle className="h-8 w-8 mb-1" />
-        <h1 className="text-xl font-bold">SOS Activated!!!</h1>
+      <div className="bg-[#222222]/80 p-4 flex flex-col items-center">
+        <AlertTriangle className="h-8 w-8 mb-1 text-[#934B49]" />
+        <h1 className="text-xl font-bold text-[#934B49]">SOS Activated!!!</h1>
         <p className="text-sm">
           Alert sent to {contactsCount} emergency contacts ({formatTime(secondsActive)})
         </p>
@@ -83,10 +97,14 @@ const SOSActivated: React.FC = () => {
       
       {/* Map View */}
       <div className="flex-1 relative">
-        <MapView satelliteView={true} showMarker={true} />
+        <MapView 
+          satelliteView={true} 
+          showMarker={true}
+          initialLocation={userLocation || undefined}
+        />
         
         {/* Emergency Services */}
-        <div className="absolute bottom-4 left-4 right-4 bg-card/90 backdrop-blur-sm rounded-lg p-4">
+        <div className="absolute bottom-0 left-0 right-0 bg-card/90 backdrop-blur-sm rounded-t-lg p-4">
           <h2 className="text-lg font-semibold mb-3">Quick call emergency services</h2>
           
           <div className="grid grid-cols-3 gap-3 mb-4">

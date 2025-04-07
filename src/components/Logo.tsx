@@ -22,27 +22,11 @@ const Logo: React.FC<LogoProps> = ({
   return (
     <div className={cn('flex items-center', className)}>
       <div className="relative">
-        <svg 
-          className={cn(sizeClasses[size], 'text-safevox-primary')} 
-          width="24" 
-          height="24" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path 
-            d="M12 2L2 12L12 22L22 12L12 2Z" 
-            fill="currentColor" 
-            stroke="white" 
-            strokeWidth="2"
-          />
-          <circle 
-            cx="12" 
-            cy="12" 
-            r="4" 
-            fill="white" 
-          />
-        </svg>
+        <img 
+          src="/lovable-uploads/e8e04187-1bf3-4ed7-b3b4-1dec5f64436c.png" 
+          alt="SafeVox Logo" 
+          className={cn(sizeClasses[size])}
+        />
       </div>
       {showText && (
         <span className="ml-2 text-lg font-bold">SafeVox</span>

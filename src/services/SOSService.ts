@@ -12,12 +12,45 @@ class SOSService {
   private activationStartTime: number = 0;
   private recordingUrl: string | null = null;
   private emergencyContacts: EmergencyContact[] = [];
+  private userLocation: { lat: number, lng: number } | null = null;
+  private locationWatchId: number | null = null;
 
-  constructor() {}
+  constructor() {
+    // Start watching location immediately
+    this.startLocationTracking();
+  }
 
   public setUserId(userId: string) {
     this.userId = userId;
     audioRecordingService.setUserId(userId);
+  }
+
+  private startLocationTracking() {
+    if (navigator.geolocation) {
+      this.locationWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+          this.userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+        },
+        (error) => {
+          console.error('Error tracking location:', error);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 5000
+        }
+      );
+    }
+  }
+
+  private stopLocationTracking() {
+    if (this.locationWatchId !== null) {
+      navigator.geolocation.clearWatch(this.locationWatchId);
+      this.locationWatchId = null;
+    }
   }
 
   public async fetchEmergencyContacts() {
@@ -38,7 +71,7 @@ class SOSService {
     }
   }
 
-  public async activate(message?: string): Promise<boolean> {
+  public async activate(message?: string, specificContactIds?: string[]): Promise<boolean> {
     if (this.isActivated) return true;
     
     try {
@@ -48,20 +81,47 @@ class SOSService {
         toast.error('Failed to start recording. Check microphone permissions.');
       }
       
-      // Get user's location
-      const location = await this.getCurrentLocation();
-      
-      // Get emergency contacts
+      // Get emergency contacts - either all or specific ones
       await this.fetchEmergencyContacts();
       
-      // In a real application, here we would send SMS/notifications to emergency contacts
-      // This would typically be done via a backend service
+      let contactsToNotify = this.emergencyContacts;
+      if (specificContactIds && specificContactIds.length > 0) {
+        contactsToNotify = this.emergencyContacts.filter(contact => 
+          specificContactIds.includes(contact.id)
+        );
+      }
+      
+      // Ensure we have the latest location
+      const location = this.userLocation || await this.getCurrentLocation();
+      
+      // Prepare SMS message
+      const defaultMessage = 'Emergency! I need help!';
+      const userMessage = message || defaultMessage;
+      const locationUrl = location 
+        ? `https://maps.google.com/?q=${location.lat},${location.lng}` 
+        : '';
+      
+      const fullMessage = `${userMessage} Track my location: ${locationUrl}`;
+      
+      // In a real application, send SMS via a backend service
+      // For demo purposes, we'll log the details
       console.log('SOS activated', {
         userId: this.userId,
         location,
-        contacts: this.emergencyContacts,
-        message: message || 'Emergency! I need help!'
+        contacts: contactsToNotify,
+        message: fullMessage
       });
+      
+      // Simulate sending SMS
+      contactsToNotify.forEach(contact => {
+        console.log(`Sending SMS to ${contact.name} (${contact.phone}): ${fullMessage}`);
+      });
+      
+      if (contactsToNotify.length > 0) {
+        toast.success(`Alert sent to ${contactsToNotify.length} contacts`);
+      } else {
+        toast.warning('No emergency contacts to notify');
+      }
       
       this.isActivated = true;
       this.activationStartTime = Date.now();
@@ -79,9 +139,7 @@ class SOSService {
       // Stop recording
       this.recordingUrl = await audioRecordingService.stopRecording();
       
-      // In a real application, here we would send a follow-up notification
-      // to emergency contacts indicating the emergency is over
-      
+      // Send follow-up notification (in a real app)
       const duration = Math.floor((Date.now() - this.activationStartTime) / 1000);
       console.log('SOS deactivated', {
         userId: this.userId,
@@ -98,6 +156,11 @@ class SOSService {
   }
 
   public async getCurrentLocation(): Promise<{lat: number, lng: number} | null> {
+    // Return cached location if available
+    if (this.userLocation) {
+      return this.userLocation;
+    }
+    
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
         resolve(null);
@@ -106,16 +169,32 @@ class SOSService {
       
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          resolve({
+          const location = {
             lat: position.coords.latitude,
             lng: position.coords.longitude
-          });
+          };
+          this.userLocation = location;
+          resolve(location);
         },
         () => {
           resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
         }
       );
     });
+  }
+
+  public simulateAccident(): void {
+    if (this.isActivated) return;
+    
+    toast.error('Accident detected!');
+    
+    // Activate SOS with a specific message for accident
+    this.activate('Accident detected! Need immediate help!');
   }
 
   public isSOSActivated(): boolean {

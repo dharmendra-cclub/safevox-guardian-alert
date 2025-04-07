@@ -20,6 +20,8 @@ import Recordings from "./pages/Recordings";
 import NotFound from "./pages/NotFound";
 import AuthRoute from "./components/AuthRoute";
 import ImHere from "./pages/ImHere";
+import Timer from "./pages/Timer";
+import Profile from "./pages/Profile";
 import React from 'react';
 
 // Create a new QueryClient instance outside of the component
@@ -49,6 +51,8 @@ const App = () => {
                 <Route path="/emergency-contacts" element={<AuthRoute><EmergencyContacts /></AuthRoute>} />
                 <Route path="/recordings" element={<AuthRoute><Recordings /></AuthRoute>} />
                 <Route path="/im-here" element={<AuthRoute><ImHere /></AuthRoute>} />
+                <Route path="/timer" element={<AuthRoute><Timer /></AuthRoute>} />
+                <Route path="/profile" element={<AuthRoute><Profile /></AuthRoute>} />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>

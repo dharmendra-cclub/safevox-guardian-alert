@@ -96,16 +96,19 @@ const ImHere: React.FC = () => {
     setSending(true);
     
     try {
-      // In a real app, this would send SMS or notifications with location
-      // For now, we'll just simulate the process
-      
+      // In a real app, we would send SMS with the Supabase Edge Function
+      // For now, we'll simulate the SMS sending process
       const locationUrl = `https://maps.google.com/?q=${userLocation.lat},${userLocation.lng}`;
-      console.log('Sending location to:', selectedContacts, 'URL:', locationUrl);
+      const message = `Emergency: I'm sharing my real-time location with you. Track me here: ${locationUrl}`;
+      
+      // Log the message we would send
+      console.log('Sending SMS to:', selectedContacts.map(c => c.phone));
+      console.log('Message:', message);
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      toast.success(`Location sent to ${selectedContacts.length} contacts`);
+      toast.success(`Location sent to ${selectedContacts.length} contacts via SMS`);
       navigate('/home');
     } catch (error) {
       console.error('Error sending location:', error);
@@ -211,7 +214,7 @@ const ImHere: React.FC = () => {
           {sending ? 'Sending...' : (
             <>
               <Send className="mr-2 h-4 w-4" />
-              Send My Location
+              Send My Location via SMS
             </>
           )}
         </Button>

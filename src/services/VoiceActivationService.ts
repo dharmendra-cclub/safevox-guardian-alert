@@ -16,7 +16,8 @@ export const fetchCodeWords = async (userId: string): Promise<CodeWord[]> => {
     return data?.map((item: VoiceActivationDB) => ({
       id: item.id,
       word: item.code_word,
-      message: item.message
+      message: item.message,
+      contacts: item.contacts || []
     })) || [];
   } catch (error) {
     console.error('Error fetching code words:', error);
@@ -25,14 +26,20 @@ export const fetchCodeWords = async (userId: string): Promise<CodeWord[]> => {
   }
 };
 
-export const addCodeWordToDatabase = async (userId: string, codeWord: string, message: string): Promise<CodeWord | null> => {
+export const addCodeWordToDatabase = async (
+  userId: string, 
+  codeWord: string, 
+  message: string,
+  contactIds: string[] = []
+): Promise<CodeWord | null> => {
   try {
     const { data, error } = await supabase
       .from('voice_activations')
       .insert({
         user_id: userId,
         code_word: codeWord,
-        message: message || 'Emergency alert!'
+        message: message || 'Emergency alert!',
+        contacts: contactIds
       })
       .select()
       .single();
@@ -43,7 +50,8 @@ export const addCodeWordToDatabase = async (userId: string, codeWord: string, me
     return {
       id: data.id,
       word: data.code_word,
-      message: data.message
+      message: data.message,
+      contacts: data.contacts || []
     };
   } catch (error) {
     console.error('Error adding codeword:', error);
@@ -67,5 +75,25 @@ export const deleteCodeWordFromDatabase = async (userId: string, codeWordId: str
     console.error('Error deleting codeword:', error);
     toast.error('Failed to delete codeword');
     return false;
+  }
+};
+
+export const fetchEmergencyContacts = async (userId: string): Promise<Record<string, string>> => {
+  try {
+    const { data, error } = await supabase
+      .from('emergency_contacts')
+      .select('id, name')
+      .eq('user_id', userId);
+    
+    if (error) throw error;
+    
+    // Transform the data into a map of id -> name
+    return data.reduce((acc: Record<string, string>, contact) => {
+      acc[contact.id] = contact.name;
+      return acc;
+    }, {});
+  } catch (error) {
+    console.error('Error fetching emergency contacts:', error);
+    return {};
   }
 };

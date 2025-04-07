@@ -6,7 +6,12 @@ import { ArrowLeft, Mic } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { CodeWord } from '@/types/voice-activation';
-import { fetchCodeWords, addCodeWordToDatabase, deleteCodeWordFromDatabase } from '@/services/VoiceActivationService';
+import { 
+  fetchCodeWords, 
+  addCodeWordToDatabase, 
+  deleteCodeWordFromDatabase,
+  fetchEmergencyContacts
+} from '@/services/VoiceActivationService';
 import CodeWordItem from '@/components/voice-activation/CodeWordItem';
 import AddCodeWordForm from '@/components/voice-activation/AddCodeWordForm';
 
@@ -18,24 +23,33 @@ const VoiceActivation: React.FC = () => {
       id: 'default',
       word: 'Help me now',
       message: 'Emergency Alert: Need immediate assistance!',
+      contacts: []
     },
   ]);
+  const [contactNames, setContactNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const loadCodeWords = async () => {
+    const loadData = async () => {
       if (!user) return;
       
       setLoading(true);
       
       try {
+        // Fetch contact names for display
+        const contacts = await fetchEmergencyContacts(user.id);
+        setContactNames(contacts);
+        
+        // Fetch custom codewords
         const words = await fetchCodeWords(user.id);
         
+        // Create default codeword with all contacts
         const defaultCodeWord = {
           id: 'default',
           word: 'Help me now',
           message: 'Emergency Alert: Need immediate assistance!',
+          contacts: Object.keys(contacts) // All contacts for default codeword
         };
         
         setCodeWords([defaultCodeWord, ...words]);
@@ -44,10 +58,10 @@ const VoiceActivation: React.FC = () => {
       }
     };
 
-    loadCodeWords();
+    loadData();
   }, [user]);
 
-  const addCodeWord = async (newCodeWord: string, newMessage: string) => {
+  const addCodeWord = async (newCodeWord: string, newMessage: string, contactIds: string[]) => {
     if (!user) return;
     
     if (newCodeWord.trim() === '') {
@@ -58,7 +72,7 @@ const VoiceActivation: React.FC = () => {
     setSaving(true);
     
     try {
-      const newCodeWordItem = await addCodeWordToDatabase(user.id, newCodeWord, newMessage);
+      const newCodeWordItem = await addCodeWordToDatabase(user.id, newCodeWord, newMessage, contactIds);
       
       if (newCodeWordItem) {
         setCodeWords([...codeWords, newCodeWordItem]);
@@ -130,6 +144,7 @@ const VoiceActivation: React.FC = () => {
               <CodeWordItem 
                 codeWord={codeWords.find(cw => cw.id === 'default')!} 
                 isDefault={true}
+                contactNames={contactNames}
                 onDelete={deleteCodeWord}
               />
 
@@ -138,6 +153,7 @@ const VoiceActivation: React.FC = () => {
                 <CodeWordItem 
                   key={codeWord.id}
                   codeWord={codeWord}
+                  contactNames={contactNames}
                   onDelete={deleteCodeWord}
                 />
               ))}
