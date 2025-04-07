@@ -10,10 +10,21 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
+// Updated interface to match our component's expectations
 interface CodeWord {
   id: string;
   word: string;
   message: string;
+}
+
+// Interface for the database structure
+interface VoiceActivationDB {
+  id: string;
+  user_id: string;
+  code_word: string;
+  message: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const VoiceActivation: React.FC = () => {
@@ -50,7 +61,14 @@ const VoiceActivation: React.FC = () => {
           message: 'Emergency Alert: Need immediate assistance!',
         };
         
-        setCodeWords([defaultCodeWord, ...(data || [])]);
+        // Transform the data from Supabase format to our component format
+        const transformedData = data?.map((item: VoiceActivationDB) => ({
+          id: item.id,
+          word: item.code_word,
+          message: item.message
+        })) || [];
+        
+        setCodeWords([defaultCodeWord, ...transformedData]);
       } catch (error) {
         console.error('Error fetching code words:', error);
         toast.error('Failed to load voice activations');
@@ -85,7 +103,14 @@ const VoiceActivation: React.FC = () => {
       
       if (error) throw error;
       
-      setCodeWords([...codeWords, data]);
+      // Transform the newly added data to match our component format
+      const newCodeWordItem: CodeWord = {
+        id: data.id,
+        word: data.code_word,
+        message: data.message
+      };
+      
+      setCodeWords([...codeWords, newCodeWordItem]);
       setNewCodeWord('');
       setNewMessage('');
       toast.success('New codeword added');
