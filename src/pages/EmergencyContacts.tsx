@@ -21,13 +21,11 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
-interface Contact {
-  id: string;
-  name: string;
-  phone: string;
+type Contact = Database['public']['Tables']['emergency_contacts']['Row'] & {
   initials: string;
-}
+};
 
 const EmergencyContacts: React.FC = () => {
   const navigate = useNavigate();
@@ -52,10 +50,12 @@ const EmergencyContacts: React.FC = () => {
         
         if (error) throw error;
         
-        setContacts(data.map(contact => ({
+        const contactsWithInitials = data.map(contact => ({
           ...contact,
           initials: contact.initials || contact.name.charAt(0).toUpperCase()
-        })));
+        }));
+        
+        setContacts(contactsWithInitials);
       } catch (error) {
         console.error('Error fetching contacts:', error);
         toast.error('Failed to load emergency contacts');
@@ -93,7 +93,7 @@ const EmergencyContacts: React.FC = () => {
       
       if (error) throw error;
       
-      setContacts([...contacts, data]);
+      setContacts([...contacts, {...data, initials: data.initials || data.name.charAt(0).toUpperCase()}]);
       setName('');
       setPhone('');
       setShowAddForm(false);

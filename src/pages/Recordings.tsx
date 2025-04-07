@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,13 +17,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
-interface Recording {
-  id: string;
-  name: string;
+type DbRecording = Database['public']['Tables']['recordings']['Row'];
+
+interface Recording extends DbRecording {
   date: string;
-  duration: string;
-  recording_url: string;
   isPlaying?: boolean;
 }
 
@@ -50,11 +48,8 @@ const Recordings: React.FC = () => {
         if (error) throw error;
         
         const formattedRecordings = data.map(rec => ({
-          id: rec.id,
-          name: rec.name,
-          date: new Date(rec.created_at).toLocaleString(),
-          duration: rec.duration || '00:00',
-          recording_url: rec.recording_url,
+          ...rec,
+          date: new Date(rec.created_at || '').toLocaleString(),
           isPlaying: false
         }));
         
@@ -71,15 +66,12 @@ const Recordings: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    // Initialize audio element
     const audio = new Audio();
     setAudioElement(audio);
     
-    // Add event listener for when audio ends
     audio.addEventListener('ended', handlePlaybackEnded);
     
     return () => {
-      // Cleanup
       if (audio) {
         audio.pause();
         audio.removeEventListener('ended', handlePlaybackEnded);
@@ -100,7 +92,6 @@ const Recordings: React.FC = () => {
   const togglePlayPause = (id: string, url: string) => {
     if (!audioElement) return;
     
-    // If this is a different recording than what's currently playing
     if (currentPlayingId !== id) {
       audioElement.src = url;
       audioElement.play().catch(err => {
@@ -116,7 +107,6 @@ const Recordings: React.FC = () => {
         }))
       );
     } else {
-      // Same recording - toggle play/pause
       if (audioElement.paused) {
         audioElement.play().catch(err => {
           console.error('Error playing audio:', err);
@@ -147,13 +137,11 @@ const Recordings: React.FC = () => {
     if (!user) return;
     
     try {
-      // Stop playback if this recording is playing
       if (currentPlayingId === id && audioElement) {
         audioElement.pause();
         setCurrentPlayingId(null);
       }
       
-      // Delete from database
       const { error } = await supabase
         .from('recordings')
         .delete()
@@ -162,7 +150,6 @@ const Recordings: React.FC = () => {
       
       if (error) throw error;
       
-      // Update state
       setRecordings(recordings.filter(rec => rec.id !== id));
       toast.success('Recording deleted');
     } catch (error) {
@@ -173,7 +160,6 @@ const Recordings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col p-4">
-      {/* Header */}
       <div className="flex items-center mb-6">
         <Button
           variant="ghost"
@@ -186,7 +172,6 @@ const Recordings: React.FC = () => {
         <h1 className="text-xl font-bold">Recordings</h1>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1">
         {loading ? (
           <div className="text-center py-8">

@@ -20,38 +20,44 @@ import Recordings from "./pages/Recordings";
 import NotFound from "./pages/NotFound";
 import AuthRoute from "./components/AuthRoute";
 import ImHere from "./pages/ImHere";
+import React from 'react';
 
+// Create a new QueryClient instance outside of the component
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<SplashScreen />} />
-            <Route path="/get-started" element={<GetStarted />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/permissions" element={<Permissions />} />
-            
-            {/* Protected routes */}
-            <Route path="/home" element={<AuthRoute><Home /></AuthRoute>} />
-            <Route path="/sos-activated" element={<AuthRoute><SOSActivated /></AuthRoute>} />
-            <Route path="/drive" element={<AuthRoute><Drive /></AuthRoute>} />
-            <Route path="/voice-activation" element={<AuthRoute><VoiceActivation /></AuthRoute>} />
-            <Route path="/emergency-contacts" element={<AuthRoute><EmergencyContacts /></AuthRoute>} />
-            <Route path="/recordings" element={<AuthRoute><Recordings /></AuthRoute>} />
-            <Route path="/im-here" element={<AuthRoute><ImHere /></AuthRoute>} />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<SplashScreen />} />
+                <Route path="/get-started" element={<GetStarted />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/permissions" element={<Permissions />} />
+                
+                {/* Protected routes */}
+                <Route path="/home" element={<AuthRoute><Home /></AuthRoute>} />
+                <Route path="/sos-activated" element={<AuthRoute><SOSActivated /></AuthRoute>} />
+                <Route path="/drive" element={<AuthRoute><Drive /></AuthRoute>} />
+                <Route path="/voice-activation" element={<AuthRoute><VoiceActivation /></AuthRoute>} />
+                <Route path="/emergency-contacts" element={<AuthRoute><EmergencyContacts /></AuthRoute>} />
+                <Route path="/recordings" element={<AuthRoute><Recordings /></AuthRoute>} />
+                <Route path="/im-here" element={<AuthRoute><ImHere /></AuthRoute>} />
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </React.StrictMode>
+  );
+};
 
 export default App;

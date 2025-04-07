@@ -9,11 +9,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Database } from '@/integrations/supabase/types';
 
-interface Contact {
-  id: string;
-  name: string;
-  phone: string;
+type DbContact = Database['public']['Tables']['emergency_contacts']['Row'];
+
+interface Contact extends DbContact {
   selected?: boolean;
 }
 

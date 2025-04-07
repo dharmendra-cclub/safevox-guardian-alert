@@ -1,157 +1,120 @@
 
-/// <reference types="google.maps" />
-
 import React, { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
-
-// Declare global Google Maps types
-declare global {
-  interface Window {
-    google: typeof google;
-    initMap: () => void;
-  }
-}
 
 interface MapViewProps {
   satelliteView?: boolean;
-  initialLocation?: { lat: number; lng: number };
   showMarker?: boolean;
+  initialLocation?: { lat: number; lng: number };
 }
 
 const MapView: React.FC<MapViewProps> = ({
-  satelliteView = true,
-  initialLocation,
-  showMarker = true,
+  satelliteView = false,
+  showMarker = false,
+  initialLocation
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(
-    initialLocation || null
-  );
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [markerInstance, setMarkerInstance] = useState<google.maps.Marker | null>(null);
 
-  // Initialize map
   useEffect(() => {
-    // Check if Google Maps API is loaded
-    if (!window.google || !window.google.maps) {
-      // Load Google Maps API script if not loaded
+    const loadGoogleMapsScript = () => {
+      // Check if the script is already loaded
+      if (window.google && window.google.maps) {
+        initMap();
+        return;
+      }
+
+      // Create and append the script
       const apiKey = 'AIzaSyBEwcosHlnDAm1DbD7pfDRkoihXD4SfdUg';
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMap`;
       script.async = true;
       script.defer = true;
+
+      // Define the callback globally
+      window.initGoogleMap = initMap;
+
+      // Handle errors
+      script.onerror = () => {
+        console.error('Failed to load Google Maps API');
+      };
+
       document.head.appendChild(script);
+    };
 
-      // Define global callback for script
-      window.initMap = () => {
-        initializeMap();
-      };
+    const initMap = () => {
+      if (!mapRef.current) return;
 
-      return () => {
-        if (script.parentNode) {
-          document.head.removeChild(script);
-        }
-        delete window.initMap;
-      };
-    } else {
-      initializeMap();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      // Default location (can be customized)
+      const defaultLocation = { lat: 17.3850, lng: 78.4867 }; // Hyderabad, India
+      const location = initialLocation || defaultLocation;
 
-  // Update map when user location changes
-  useEffect(() => {
-    if (mapInstanceRef.current && userLocation) {
-      mapInstanceRef.current.setCenter(userLocation);
-      
-      if (showMarker) {
-        if (markerRef.current) {
-          markerRef.current.setPosition(userLocation);
-        } else if (window.google && window.google.maps) {
-          markerRef.current = new google.maps.Marker({
-            position: userLocation,
-            map: mapInstanceRef.current,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: "#559C62",
-              fillOpacity: 1,
-              strokeColor: "#FFFFFF",
-              strokeWeight: 2,
-            },
-          });
-        }
-      }
-    }
-  }, [userLocation, showMarker]);
-
-  // Initialize map instance
-  const initializeMap = () => {
-    if (!mapRef.current || !window.google || !window.google.maps) return;
-
-    // Try to get user's location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userPos = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          
-          setUserLocation(userPos);
-          
-          const mapOptions: google.maps.MapOptions = {
-            center: userPos,
-            zoom: 16,
-            mapTypeId: satelliteView ? 'satellite' : 'roadmap',
-            disableDefaultUI: true,
-            zoomControl: true,
-            mapTypeControl: false,
-          };
-          
-          mapInstanceRef.current = new google.maps.Map(mapRef.current, mapOptions);
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          toast.error('Unable to get your location. Please check your device settings.');
-          
-          // Use default location if user location is not available
-          const defaultLocation = { lat: 28.6139, lng: 77.2090 }; // New Delhi
-          setUserLocation(defaultLocation);
-          
-          const mapOptions: google.maps.MapOptions = {
-            center: defaultLocation,
-            zoom: 10,
-            mapTypeId: satelliteView ? 'satellite' : 'roadmap',
-            disableDefaultUI: true,
-            zoomControl: true,
-            mapTypeControl: false,
-          };
-          
-          mapInstanceRef.current = new google.maps.Map(mapRef.current, mapOptions);
-        }
-      );
-    } else {
-      toast.error('Geolocation is not supported by this browser.');
-      
-      // Use default location if geolocation is not supported
-      const defaultLocation = { lat: 28.6139, lng: 77.2090 }; // New Delhi
-      setUserLocation(defaultLocation);
-      
       const mapOptions: google.maps.MapOptions = {
-        center: defaultLocation,
-        zoom: 10,
+        center: location,
+        zoom: 15,
         mapTypeId: satelliteView ? 'satellite' : 'roadmap',
-        disableDefaultUI: true,
         zoomControl: true,
         mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false
       };
-      
-      mapInstanceRef.current = new google.maps.Map(mapRef.current, mapOptions);
-    }
-  };
 
-  return <div ref={mapRef} className="map-container h-full w-full" />;
+      const map = new google.maps.Map(mapRef.current, mapOptions);
+      setMapInstance(map);
+
+      // Add marker if needed
+      if (showMarker) {
+        const marker = new google.maps.Marker({
+          position: location,
+          map: map,
+          animation: google.maps.Animation.DROP,
+          title: 'Your Location'
+        });
+        setMarkerInstance(marker);
+      }
+    };
+
+    loadGoogleMapsScript();
+
+    // Cleanup
+    return () => {
+      // Remove global callback
+      if (window.initGoogleMap) {
+        delete window.initGoogleMap;
+      }
+    };
+  }, [satelliteView, showMarker, initialLocation]);
+
+  // Update map type if satelliteView prop changes
+  useEffect(() => {
+    if (mapInstance) {
+      mapInstance.setMapTypeId(satelliteView ? 'satellite' : 'roadmap');
+    }
+  }, [satelliteView, mapInstance]);
+
+  // Update marker position if initialLocation changes
+  useEffect(() => {
+    if (markerInstance && initialLocation) {
+      markerInstance.setPosition(initialLocation);
+      mapInstance?.panTo(initialLocation);
+    }
+  }, [initialLocation, markerInstance, mapInstance]);
+
+  return (
+    <div 
+      ref={mapRef} 
+      className="w-full h-full min-h-[300px]"
+      style={{ background: '#e5e5e5' }}
+    />
+  );
 };
+
+// Add the global type for the callback
+declare global {
+  interface Window {
+    initGoogleMap: () => void;
+    google: any;
+  }
+}
 
 export default MapView;

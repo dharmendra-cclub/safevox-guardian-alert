@@ -99,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       if (!user) throw new Error('No user');
 
+      // Using typed API access to avoid TypeScript errors
       const { data, error } = await supabase
         .from('users')
         .select('*')

@@ -97,12 +97,14 @@ class AudioRecordingService {
         .getPublicUrl(filePath);
       
       // Save recording metadata to database
-      await supabase.from('recordings').insert({
-        user_id: this.userId,
-        name: this.fileName,
-        recording_url: urlData.publicUrl,
-        duration: '00:00' // In a real app, calculate duration
-      });
+      await supabase
+        .from('recordings')
+        .insert({
+          user_id: this.userId,
+          name: this.fileName,
+          recording_url: urlData.publicUrl,
+          duration: '00:00' // In a real app, calculate duration
+        });
       
       return urlData.publicUrl;
     } catch (error) {

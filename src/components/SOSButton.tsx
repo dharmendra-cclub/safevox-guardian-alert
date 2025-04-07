@@ -17,7 +17,9 @@ const SOSButton: React.FC<SOSButtonProps> = ({
     <button
       onClick={onClick}
       className={cn(
-        'sos-button',
+        'sos-button fixed bottom-24 left-1/2 transform -translate-x-1/2 z-20',
+        'h-20 w-20 rounded-full flex items-center justify-center',
+        'bg-[#222222] border-4 border-[#FFFFFF] shadow-lg',
         isActive && 'animate-pulse',
         className
       )}

@@ -2,13 +2,16 @@
 import { supabase } from '@/integrations/supabase/client';
 import { audioRecordingService } from './AudioRecordingService';
 import { toast } from 'sonner';
+import { Database } from '@/integrations/supabase/types';
+
+type EmergencyContact = Database['public']['Tables']['emergency_contacts']['Row'];
 
 class SOSService {
   private userId: string | null = null;
   private isActivated: boolean = false;
   private activationStartTime: number = 0;
   private recordingUrl: string | null = null;
-  private emergencyContacts: any[] = [];
+  private emergencyContacts: EmergencyContact[] = [];
 
   constructor() {}
 
