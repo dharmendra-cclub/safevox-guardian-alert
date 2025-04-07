@@ -2,30 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Trash, Plus, Mic } from 'lucide-react';
+import { ArrowLeft, Mic } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-
-// Updated interface to match our component's expectations
-interface CodeWord {
-  id: string;
-  word: string;
-  message: string;
-}
-
-// Interface for the database structure
-interface VoiceActivationDB {
-  id: string;
-  user_id: string;
-  code_word: string;
-  message: string;
-  created_at: string;
-  updated_at: string;
-}
+import { CodeWord } from '@/types/voice-activation';
+import { fetchCodeWords, addCodeWordToDatabase, deleteCodeWordFromDatabase } from '@/services/VoiceActivationService';
+import CodeWordItem from '@/components/voice-activation/CodeWordItem';
+import AddCodeWordForm from '@/components/voice-activation/AddCodeWordForm';
 
 const VoiceActivation: React.FC = () => {
   const navigate = useNavigate();
@@ -38,22 +21,16 @@ const VoiceActivation: React.FC = () => {
     },
   ]);
   const [loading, setLoading] = useState(true);
-  
-  const [newCodeWord, setNewCodeWord] = useState('');
-  const [newMessage, setNewMessage] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetchCodeWords = async () => {
+    const loadCodeWords = async () => {
       if (!user) return;
       
+      setLoading(true);
+      
       try {
-        const { data, error } = await supabase
-          .from('voice_activations')
-          .select('*')
-          .eq('user_id', user.id);
-        
-        if (error) throw error;
+        const words = await fetchCodeWords(user.id);
         
         const defaultCodeWord = {
           id: 'default',
@@ -61,26 +38,16 @@ const VoiceActivation: React.FC = () => {
           message: 'Emergency Alert: Need immediate assistance!',
         };
         
-        // Transform the data from Supabase format to our component format
-        const transformedData = data?.map((item: VoiceActivationDB) => ({
-          id: item.id,
-          word: item.code_word,
-          message: item.message
-        })) || [];
-        
-        setCodeWords([defaultCodeWord, ...transformedData]);
-      } catch (error) {
-        console.error('Error fetching code words:', error);
-        toast.error('Failed to load voice activations');
+        setCodeWords([defaultCodeWord, ...words]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCodeWords();
+    loadCodeWords();
   }, [user]);
 
-  const addCodeWord = async () => {
+  const addCodeWord = async (newCodeWord: string, newMessage: string) => {
     if (!user) return;
     
     if (newCodeWord.trim() === '') {
@@ -91,32 +58,12 @@ const VoiceActivation: React.FC = () => {
     setSaving(true);
     
     try {
-      const { data, error } = await supabase
-        .from('voice_activations')
-        .insert({
-          user_id: user.id,
-          code_word: newCodeWord,
-          message: newMessage || 'Emergency alert!'
-        })
-        .select()
-        .single();
+      const newCodeWordItem = await addCodeWordToDatabase(user.id, newCodeWord, newMessage);
       
-      if (error) throw error;
-      
-      // Transform the newly added data to match our component format
-      const newCodeWordItem: CodeWord = {
-        id: data.id,
-        word: data.code_word,
-        message: data.message
-      };
-      
-      setCodeWords([...codeWords, newCodeWordItem]);
-      setNewCodeWord('');
-      setNewMessage('');
-      toast.success('New codeword added');
-    } catch (error) {
-      console.error('Error adding codeword:', error);
-      toast.error('Failed to add codeword');
+      if (newCodeWordItem) {
+        setCodeWords([...codeWords, newCodeWordItem]);
+        toast.success('New codeword added');
+      }
     } finally {
       setSaving(false);
     }
@@ -130,20 +77,11 @@ const VoiceActivation: React.FC = () => {
     
     if (!user) return;
     
-    try {
-      const { error } = await supabase
-        .from('voice_activations')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
+    const success = await deleteCodeWordFromDatabase(user.id, id);
+    
+    if (success) {
       setCodeWords(codeWords.filter((cw) => cw.id !== id));
       toast.success('Codeword deleted');
-    } catch (error) {
-      console.error('Error deleting codeword:', error);
-      toast.error('Failed to delete codeword');
     }
   };
 
@@ -189,96 +127,25 @@ const VoiceActivation: React.FC = () => {
           ) : (
             <>
               {/* Default Codeword */}
-              <div className="p-4 mb-4 border border-border rounded-lg bg-card">
-                <div className="flex justify-between mb-2">
-                  <div>
-                    <h3 className="font-medium">Default</h3>
-                    <p className="text-xs text-muted-foreground">Cannot be deleted</p>
-                  </div>
-                </div>
-                <div className="space-y-2 mt-3">
-                  <Input 
-                    value="Help me now"
-                    readOnly
-                    className="bg-input text-foreground"
-                  />
-                  <Textarea 
-                    value="Emergency Alert: Need immediate assistance!"
-                    readOnly
-                    className="bg-input text-foreground h-20"
-                  />
-                </div>
-              </div>
+              <CodeWordItem 
+                codeWord={codeWords.find(cw => cw.id === 'default')!} 
+                isDefault={true}
+                onDelete={deleteCodeWord}
+              />
 
               {/* Custom Codewords */}
               {codeWords.filter(cw => cw.id !== 'default').map((codeWord) => (
-                <div 
+                <CodeWordItem 
                   key={codeWord.id}
-                  className="p-4 mb-4 border border-border rounded-lg bg-card"
-                >
-                  <div className="flex justify-between mb-2">
-                    <h3 className="font-medium">Custom Codeword</h3>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteCodeWord(codeWord.id)}
-                      className="text-destructive"
-                    >
-                      <Trash size={16} />
-                    </Button>
-                  </div>
-                  <div className="space-y-2 mt-3">
-                    <Input 
-                      value={codeWord.word}
-                      readOnly
-                      className="bg-input text-foreground"
-                    />
-                    <Textarea 
-                      value={codeWord.message}
-                      readOnly
-                      className="bg-input text-foreground h-20"
-                    />
-                  </div>
-                </div>
+                  codeWord={codeWord}
+                  onDelete={deleteCodeWord}
+                />
               ))}
             </>
           )}
 
           {/* Add New Codeword */}
-          <div className="p-4 mb-4 border border-border rounded-lg bg-card">
-            <h3 className="font-medium mb-3">Add New Codeword</h3>
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="newCodeWord">Codeword or Phrase</Label>
-                <Input
-                  id="newCodeWord"
-                  value={newCodeWord}
-                  onChange={(e) => setNewCodeWord(e.target.value)}
-                  placeholder="Enter a new codeword..."
-                  className="bg-input text-foreground"
-                />
-              </div>
-              <div>
-                <Label htmlFor="newMessage">Custom Message</Label>
-                <Textarea
-                  id="newMessage"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Message to send to emergency contacts..."
-                  className="bg-input text-foreground h-20"
-                />
-              </div>
-              <Button
-                onClick={addCodeWord}
-                className="w-full"
-                variant="outline"
-                disabled={saving}
-              >
-                <Plus size={16} className="mr-2" />
-                {saving ? 'Adding...' : 'Add Codeword'}
-              </Button>
-            </div>
-          </div>
+          <AddCodeWordForm onAddCodeWord={addCodeWord} saving={saving} />
 
           {/* Test Voice Recognition */}
           <Button
