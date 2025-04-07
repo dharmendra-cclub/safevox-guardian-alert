@@ -41,7 +41,7 @@ const Profile: React.FC = () => {
     
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .eq('id', user.id)
         .single();
@@ -51,10 +51,20 @@ const Profile: React.FC = () => {
       }
       
       if (data) {
-        setProfile(data);
+        // Convert the user data to the profile format
+        const profileData: Profile = {
+          id: data.id,
+          full_name: data.full_name || '',
+          email: user.email || '',
+          phone: data.phone || '',
+          address: data.address || '',
+          avatar_url: data.avatar_url || null
+        };
+        
+        setProfile(profileData);
       } else {
         // Create default profile if not exists
-        const defaultProfile = {
+        const defaultProfile: Profile = {
           id: user.id,
           full_name: user.user_metadata?.full_name || '',
           email: user.email || '',
@@ -66,7 +76,12 @@ const Profile: React.FC = () => {
         setProfile(defaultProfile);
         
         // Save default profile to database
-        await supabase.from('profiles').insert(defaultProfile);
+        await supabase.from('users').upsert({
+          id: user.id,
+          full_name: defaultProfile.full_name,
+          email: defaultProfile.email,
+          phone: defaultProfile.phone
+        });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -138,11 +153,13 @@ const Profile: React.FC = () => {
         }
       }
       
-      // Update profile
+      // Update profile in users table
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({
-          ...profile,
+          full_name: profile.full_name,
+          phone: profile.phone,
+          address: profile.address,
           avatar_url: avatarUrl
         })
         .eq('id', user.id);
