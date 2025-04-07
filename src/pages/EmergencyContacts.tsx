@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Contact {
   id: string;
@@ -29,45 +31,102 @@ interface Contact {
 
 const EmergencyContacts: React.FC = () => {
   const navigate = useNavigate();
-  const [contacts, setContacts] = useState<Contact[]>([
-    { id: '1', name: 'Mom', phone: '+91 9560 9034', initials: 'M' },
-    { id: '2', name: 'Dad', phone: '+91 9560 9034', initials: 'D' },
-    { id: '3', name: 'Sister', phone: '+91 9560 9034', initials: 'S' },
-    { id: '4', name: 'Granny', phone: '+91 9560 9034', initials: 'G' },
-  ]);
+  const { user } = useAuth();
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const addContact = () => {
+  useEffect(() => {
+    const fetchContacts = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('emergency_contacts')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+        
+        setContacts(data.map(contact => ({
+          ...contact,
+          initials: contact.initials || contact.name.charAt(0).toUpperCase()
+        })));
+      } catch (error) {
+        console.error('Error fetching contacts:', error);
+        toast.error('Failed to load emergency contacts');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContacts();
+  }, [user]);
+
+  const addContact = async () => {
+    if (!user) return;
+    
     if (!name.trim() || !phone.trim()) {
       toast.error('Please enter both name and phone number');
       return;
     }
     
-    const initials = name.charAt(0).toUpperCase();
-    const newContact: Contact = {
-      id: `contact-${Date.now()}`,
-      name,
-      phone,
-      initials,
-    };
+    setSaving(true);
     
-    setContacts([...contacts, newContact]);
-    setName('');
-    setPhone('');
-    setShowAddForm(false);
-    toast.success('Contact added successfully');
+    try {
+      const initials = name.charAt(0).toUpperCase();
+      
+      const { data, error } = await supabase
+        .from('emergency_contacts')
+        .insert({
+          user_id: user.id,
+          name,
+          phone,
+          initials
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setContacts([...contacts, data]);
+      setName('');
+      setPhone('');
+      setShowAddForm(false);
+      toast.success('Contact added successfully');
+    } catch (error) {
+      console.error('Error adding contact:', error);
+      toast.error('Failed to add contact');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const deleteContact = (id: string) => {
-    setContacts(contacts.filter((contact) => contact.id !== id));
-    toast.success('Contact removed');
+  const deleteContact = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('emergency_contacts')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setContacts(contacts.filter((contact) => contact.id !== id));
+      toast.success('Contact removed');
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+      toast.error('Failed to delete contact');
+    }
   };
 
   const saveContacts = () => {
-    // In a real app, this would save to backend or local storage
     toast.success('Emergency contacts saved');
     navigate('/home');
   };
@@ -89,7 +148,9 @@ const EmergencyContacts: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1">
-        {contacts.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-8">Loading contacts...</div>
+        ) : contacts.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No emergency contacts added yet
           </div>
@@ -160,8 +221,9 @@ const EmergencyContacts: React.FC = () => {
                 <Button
                   onClick={addContact}
                   className="flex-1 bg-safevox-primary hover:bg-safevox-primary/90"
+                  disabled={saving}
                 >
-                  Add
+                  {saving ? 'Adding...' : 'Add'}
                 </Button>
               </div>
             </div>

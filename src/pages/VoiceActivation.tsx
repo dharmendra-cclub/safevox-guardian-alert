@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Trash, Plus, Mic } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CodeWord {
   id: string;
@@ -16,6 +18,7 @@ interface CodeWord {
 
 const VoiceActivation: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [codeWords, setCodeWords] = useState<CodeWord[]>([
     {
       id: 'default',
@@ -23,43 +26,103 @@ const VoiceActivation: React.FC = () => {
       message: 'Emergency Alert: Need immediate assistance!',
     },
   ]);
+  const [loading, setLoading] = useState(true);
   
   const [newCodeWord, setNewCodeWord] = useState('');
   const [newMessage, setNewMessage] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const addCodeWord = () => {
+  useEffect(() => {
+    const fetchCodeWords = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('voice_activations')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+        
+        const defaultCodeWord = {
+          id: 'default',
+          word: 'Help me now',
+          message: 'Emergency Alert: Need immediate assistance!',
+        };
+        
+        setCodeWords([defaultCodeWord, ...(data || [])]);
+      } catch (error) {
+        console.error('Error fetching code words:', error);
+        toast.error('Failed to load voice activations');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCodeWords();
+  }, [user]);
+
+  const addCodeWord = async () => {
+    if (!user) return;
+    
     if (newCodeWord.trim() === '') {
       toast.error('Please enter a codeword');
       return;
     }
     
-    const id = `cw-${Date.now()}`;
-    setCodeWords([
-      ...codeWords,
-      {
-        id,
-        word: newCodeWord,
-        message: newMessage || 'Emergency alert!',
-      },
-    ]);
+    setSaving(true);
     
-    setNewCodeWord('');
-    setNewMessage('');
-    toast.success('New codeword added');
+    try {
+      const { data, error } = await supabase
+        .from('voice_activations')
+        .insert({
+          user_id: user.id,
+          code_word: newCodeWord,
+          message: newMessage || 'Emergency alert!'
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setCodeWords([...codeWords, data]);
+      setNewCodeWord('');
+      setNewMessage('');
+      toast.success('New codeword added');
+    } catch (error) {
+      console.error('Error adding codeword:', error);
+      toast.error('Failed to add codeword');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const deleteCodeWord = (id: string) => {
+  const deleteCodeWord = async (id: string) => {
     if (id === 'default') {
       toast.error('Cannot delete default codeword');
       return;
     }
     
-    setCodeWords(codeWords.filter((cw) => cw.id !== id));
-    toast.success('Codeword deleted');
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('voice_activations')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setCodeWords(codeWords.filter((cw) => cw.id !== id));
+      toast.success('Codeword deleted');
+    } catch (error) {
+      console.error('Error deleting codeword:', error);
+      toast.error('Failed to delete codeword');
+    }
   };
 
   const saveCodeWords = () => {
-    // In a real app, this would save to backend or local storage
     toast.success('Voice activation settings saved');
     navigate('/home');
   };
@@ -96,59 +159,65 @@ const VoiceActivation: React.FC = () => {
             When you say these phrases aloud, an emergency alert will be sent to your contacts
           </p>
 
-          {/* Default Codeword */}
-          <div className="p-4 mb-4 border border-border rounded-lg bg-card">
-            <div className="flex justify-between mb-2">
-              <div>
-                <h3 className="font-medium">Default</h3>
-                <p className="text-xs text-muted-foreground">Cannot be deleted</p>
+          {loading ? (
+            <div className="text-center py-4">Loading codewords...</div>
+          ) : (
+            <>
+              {/* Default Codeword */}
+              <div className="p-4 mb-4 border border-border rounded-lg bg-card">
+                <div className="flex justify-between mb-2">
+                  <div>
+                    <h3 className="font-medium">Default</h3>
+                    <p className="text-xs text-muted-foreground">Cannot be deleted</p>
+                  </div>
+                </div>
+                <div className="space-y-2 mt-3">
+                  <Input 
+                    value="Help me now"
+                    readOnly
+                    className="bg-input text-foreground"
+                  />
+                  <Textarea 
+                    value="Emergency Alert: Need immediate assistance!"
+                    readOnly
+                    className="bg-input text-foreground h-20"
+                  />
+                </div>
               </div>
-            </div>
-            <div className="space-y-2 mt-3">
-              <Input 
-                value="Help me now"
-                readOnly
-                className="bg-input text-foreground"
-              />
-              <Textarea 
-                value="Emergency Alert: Need immediate assistance!"
-                readOnly
-                className="bg-input text-foreground h-20"
-              />
-            </div>
-          </div>
 
-          {/* Custom Codewords */}
-          {codeWords.filter(cw => cw.id !== 'default').map((codeWord) => (
-            <div 
-              key={codeWord.id}
-              className="p-4 mb-4 border border-border rounded-lg bg-card"
-            >
-              <div className="flex justify-between mb-2">
-                <h3 className="font-medium">Custom Codeword</h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteCodeWord(codeWord.id)}
-                  className="text-destructive"
+              {/* Custom Codewords */}
+              {codeWords.filter(cw => cw.id !== 'default').map((codeWord) => (
+                <div 
+                  key={codeWord.id}
+                  className="p-4 mb-4 border border-border rounded-lg bg-card"
                 >
-                  <Trash size={16} />
-                </Button>
-              </div>
-              <div className="space-y-2 mt-3">
-                <Input 
-                  value={codeWord.word}
-                  readOnly
-                  className="bg-input text-foreground"
-                />
-                <Textarea 
-                  value={codeWord.message}
-                  readOnly
-                  className="bg-input text-foreground h-20"
-                />
-              </div>
-            </div>
-          ))}
+                  <div className="flex justify-between mb-2">
+                    <h3 className="font-medium">Custom Codeword</h3>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteCodeWord(codeWord.id)}
+                      className="text-destructive"
+                    >
+                      <Trash size={16} />
+                    </Button>
+                  </div>
+                  <div className="space-y-2 mt-3">
+                    <Input 
+                      value={codeWord.word}
+                      readOnly
+                      className="bg-input text-foreground"
+                    />
+                    <Textarea 
+                      value={codeWord.message}
+                      readOnly
+                      className="bg-input text-foreground h-20"
+                    />
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
 
           {/* Add New Codeword */}
           <div className="p-4 mb-4 border border-border rounded-lg bg-card">
@@ -178,9 +247,10 @@ const VoiceActivation: React.FC = () => {
                 onClick={addCodeWord}
                 className="w-full"
                 variant="outline"
+                disabled={saving}
               >
                 <Plus size={16} className="mr-2" />
-                Add Codeword
+                {saving ? 'Adding...' : 'Add Codeword'}
               </Button>
             </div>
           </div>

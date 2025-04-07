@@ -9,7 +9,141 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      emergency_contacts: {
+        Row: {
+          created_at: string | null
+          id: string
+          initials: string | null
+          name: string
+          phone: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          initials?: string | null
+          name: string
+          phone: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          initials?: string | null
+          name?: string
+          phone?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_contacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recordings: {
+        Row: {
+          created_at: string | null
+          duration: string | null
+          id: string
+          name: string
+          recording_url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration?: string | null
+          id?: string
+          name: string
+          recording_url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration?: string | null
+          id?: string
+          name?: string
+          recording_url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recordings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      voice_activations: {
+        Row: {
+          code_word: string
+          created_at: string | null
+          id: string
+          message: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code_word: string
+          created_at?: string | null
+          id?: string
+          message: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code_word?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_activations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

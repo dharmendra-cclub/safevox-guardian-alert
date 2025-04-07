@@ -5,10 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Phone, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import MapView from '@/components/MapView';
+import { useAuth } from '@/hooks/useAuth';
+import { sosService } from '@/services/SOSService';
+import { audioRecordingService } from '@/services/AudioRecordingService';
 
 const SOSActivated: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [secondsActive, setSecondsActive] = useState(0);
+  const [contactsCount, setContactsCount] = useState(0);
+  
+  // Set user ID for services
+  useEffect(() => {
+    if (user) {
+      sosService.setUserId(user.id);
+      audioRecordingService.setUserId(user.id);
+      
+      // Start SOS process if not already activated
+      if (!sosService.isSOSActivated()) {
+        sosService.activate();
+      }
+      
+      // Fetch emergency contacts count
+      sosService.fetchEmergencyContacts().then((contacts) => {
+        setContactsCount(contacts.length);
+      });
+    }
+  }, [user]);
   
   // Update timer every second
   useEffect(() => {
@@ -26,14 +49,25 @@ const SOSActivated: React.FC = () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
   
-  const handleDeactivate = () => {
+  const handleDeactivate = async () => {
+    await sosService.deactivate();
     toast.info('SOS deactivated');
     navigate('/home');
   };
   
   const handleEmergencyCall = (service: string) => {
+    const phoneNumbers: Record<string, string> = {
+      'Police': '911',
+      'Ambulance': '911',
+      'Others': '911'
+    };
+    
+    const phoneNumber = phoneNumbers[service] || '911';
+    
     toast.info(`Calling ${service}...`);
-    // In a real app, this would use a native API to make a phone call
+    
+    // Use tel: protocol to initiate a call if on a mobile device
+    window.location.href = `tel:${phoneNumber}`;
   };
 
   return (
@@ -43,7 +77,7 @@ const SOSActivated: React.FC = () => {
         <AlertTriangle className="h-8 w-8 mb-1" />
         <h1 className="text-xl font-bold">SOS Activated!!!</h1>
         <p className="text-sm">
-          Alert sent to your emergency contacts ({formatTime(secondsActive)})
+          Alert sent to {contactsCount} emergency contacts ({formatTime(secondsActive)})
         </p>
       </div>
       

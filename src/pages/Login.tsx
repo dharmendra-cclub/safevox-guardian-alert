@@ -1,19 +1,28 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { signIn, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // If user is already authenticated, redirect to home
+  useEffect(() => {
+    if (user) {
+      navigate('/home');
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -24,15 +33,13 @@ const Login: React.FC = () => {
       return;
     }
 
-    // Simulate authentication - in a real app, this would call an API
-    setTimeout(() => {
-      // Store user info in localStorage (in a real app would use proper auth state management)
-      localStorage.setItem('user', JSON.stringify({ email }));
-      
-      setLoading(false);
-      toast.success('Login successful');
+    try {
+      await signIn(email, password);
       navigate('/home');
-    }, 1000);
+    } catch (error) {
+      // Error is handled in signIn function
+      setLoading(false);
+    }
   };
 
   return (

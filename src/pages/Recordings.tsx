@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
@@ -16,36 +16,159 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Recording {
   id: string;
   name: string;
   date: string;
   duration: string;
+  recording_url: string;
   isPlaying?: boolean;
 }
 
 const Recordings: React.FC = () => {
   const navigate = useNavigate();
-  const [recordings, setRecordings] = React.useState<Recording[]>([
-    { id: '1', name: 'Recording 1', date: '2023-07-30 18:23:17', duration: '01:23' },
-    { id: '2', name: 'Recording 2', date: '2023-07-28 22:23:17', duration: '02:45' },
-    { id: '3', name: 'Recording 3', date: '2023-07-25 12:23:17', duration: '00:58' },
-    { id: '4', name: 'Recording 4', date: '2023-07-19 08:23:17', duration: '03:12' },
-  ]);
+  const { user } = useAuth();
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
 
-  const togglePlayPause = (id: string) => {
-    setRecordings(
-      recordings.map((rec) => ({
-        ...rec,
-        isPlaying: rec.id === id ? !rec.isPlaying : false,
+  useEffect(() => {
+    const fetchRecordings = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('recordings')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        const formattedRecordings = data.map(rec => ({
+          id: rec.id,
+          name: rec.name,
+          date: new Date(rec.created_at).toLocaleString(),
+          duration: rec.duration || '00:00',
+          recording_url: rec.recording_url,
+          isPlaying: false
+        }));
+        
+        setRecordings(formattedRecordings);
+      } catch (error) {
+        console.error('Error fetching recordings:', error);
+        toast.error('Failed to load recordings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecordings();
+  }, [user]);
+
+  useEffect(() => {
+    // Initialize audio element
+    const audio = new Audio();
+    setAudioElement(audio);
+    
+    // Add event listener for when audio ends
+    audio.addEventListener('ended', handlePlaybackEnded);
+    
+    return () => {
+      // Cleanup
+      if (audio) {
+        audio.pause();
+        audio.removeEventListener('ended', handlePlaybackEnded);
+      }
+    };
+  }, []);
+
+  const handlePlaybackEnded = () => {
+    setRecordings(rec => 
+      rec.map(recording => ({
+        ...recording,
+        isPlaying: false
       }))
     );
+    setCurrentPlayingId(null);
   };
 
-  const deleteRecording = (id: string) => {
-    setRecordings(recordings.filter((rec) => rec.id !== id));
-    toast.success('Recording deleted');
+  const togglePlayPause = (id: string, url: string) => {
+    if (!audioElement) return;
+    
+    // If this is a different recording than what's currently playing
+    if (currentPlayingId !== id) {
+      audioElement.src = url;
+      audioElement.play().catch(err => {
+        console.error('Error playing audio:', err);
+        toast.error('Failed to play recording');
+      });
+      setCurrentPlayingId(id);
+      
+      setRecordings(rec => 
+        rec.map(recording => ({
+          ...recording,
+          isPlaying: recording.id === id
+        }))
+      );
+    } else {
+      // Same recording - toggle play/pause
+      if (audioElement.paused) {
+        audioElement.play().catch(err => {
+          console.error('Error playing audio:', err);
+          toast.error('Failed to play recording');
+        });
+        
+        setRecordings(rec => 
+          rec.map(recording => ({
+            ...recording,
+            isPlaying: recording.id === id
+          }))
+        );
+      } else {
+        audioElement.pause();
+        
+        setRecordings(rec => 
+          rec.map(recording => ({
+            ...recording,
+            isPlaying: false
+          }))
+        );
+        setCurrentPlayingId(null);
+      }
+    }
+  };
+
+  const deleteRecording = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      // Stop playback if this recording is playing
+      if (currentPlayingId === id && audioElement) {
+        audioElement.pause();
+        setCurrentPlayingId(null);
+      }
+      
+      // Delete from database
+      const { error } = await supabase
+        .from('recordings')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Update state
+      setRecordings(recordings.filter(rec => rec.id !== id));
+      toast.success('Recording deleted');
+    } catch (error) {
+      console.error('Error deleting recording:', error);
+      toast.error('Failed to delete recording');
+    }
   };
 
   return (
@@ -65,7 +188,11 @@ const Recordings: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1">
-        {recordings.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-8">
+            Loading recordings...
+          </div>
+        ) : recordings.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No recordings available
           </div>
@@ -101,7 +228,7 @@ const Recordings: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     className="text-safevox-primary"
-                    onClick={() => togglePlayPause(recording.id)}
+                    onClick={() => togglePlayPause(recording.id, recording.recording_url)}
                   >
                     {recording.isPlaying ? (
                       <Pause size={20} />
@@ -112,8 +239,10 @@ const Recordings: React.FC = () => {
                   <div className="ml-2 flex-1">
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-safevox-primary"
-                        style={{ width: recording.isPlaying ? '45%' : '0%' }}
+                        className="h-full bg-safevox-primary transition-all duration-300"
+                        style={{ 
+                          width: recording.isPlaying ? '45%' : '0%' 
+                        }}
                       />
                     </div>
                   </div>

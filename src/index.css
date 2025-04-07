@@ -34,6 +34,8 @@
     --ring: 139 29% 45%;
 
     --radius: 0.75rem;
+    
+    --safevox-sos: 0 84.2% 60.2%;
   }
 }
 
@@ -57,7 +59,8 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: #F93943;
+  background-color: #222222;
+  border: 2px solid #FFFFFF;
   color: white;
   font-weight: bold;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
@@ -65,7 +68,7 @@
   align-items: center;
   justify-content: center;
   position: absolute;
-  bottom: 70px;
+  bottom: 90px;
   right: 20px;
   z-index: 10;
   animation: pulse 2s infinite;

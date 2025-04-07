@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, Search, ChevronDown } from 'lucide-react';
+import { Menu, Search, ChevronDown, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -10,13 +10,30 @@ import SOSButton from '@/components/SOSButton';
 import BottomNavBar from '@/components/BottomNavBar';
 import SideBarMenu from '@/components/SideBarMenu';
 import Logo from '@/components/Logo';
+import { useAuth } from '@/hooks/useAuth';
+import { sosService } from '@/services/SOSService';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [addressQuery, setAddressQuery] = useState('');
 
+  // Set user ID for SOS service
+  useEffect(() => {
+    if (user) {
+      sosService.setUserId(user.id);
+    }
+  }, [user]);
+
   const handleSOSPress = () => {
+    sosService.activate();
     toast.success('SOS activated!');
     navigate('/sos-activated');
   };
@@ -27,6 +44,11 @@ const Home: React.FC = () => {
       toast.info(`Searching for: ${addressQuery}`);
       // In a real app, this would call a geocoding API
     }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
   };
 
   return (
@@ -58,7 +80,7 @@ const Home: React.FC = () => {
           </div>
         </form>
         
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
             size="sm" 
@@ -66,6 +88,23 @@ const Home: React.FC = () => {
           >
             English <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+              >
+                <LogOut size={18} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

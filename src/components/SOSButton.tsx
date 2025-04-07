@@ -21,8 +21,9 @@ const SOSButton: React.FC<SOSButtonProps> = ({
         isActive && 'animate-pulse',
         className
       )}
+      aria-label="SOS Emergency Button"
     >
-      SOS
+      <span className="text-[#934B49] font-bold text-xl">SOS</span>
     </button>
   );
 };

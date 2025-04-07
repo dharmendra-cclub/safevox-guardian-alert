@@ -24,11 +24,24 @@ const Logo: React.FC<LogoProps> = ({
       <div className="relative">
         <svg 
           className={cn(sizeClasses[size], 'text-safevox-primary')} 
+          width="24" 
+          height="24" 
           viewBox="0 0 24 24" 
-          fill="currentColor"
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <path d="M12 2L6 12l6 10 6-10-6-10zm0 3.5L15.5 12 12 17.5 8.5 12 12 5.5z" />
-          <path d="M12 12.5c.7 0 1.3-.6 1.3-1.3S12.7 10 12 10s-1.3.6-1.3 1.3.6 1.2 1.3 1.2z" />
+          <path 
+            d="M12 2L2 12L12 22L22 12L12 2Z" 
+            fill="currentColor" 
+            stroke="white" 
+            strokeWidth="2"
+          />
+          <circle 
+            cx="12" 
+            cy="12" 
+            r="4" 
+            fill="white" 
+          />
         </svg>
       </div>
       {showText && (

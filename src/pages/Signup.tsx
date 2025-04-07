@@ -1,14 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
+  const { signUp, user } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -16,7 +18,14 @@ const Signup: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // If user is already authenticated, redirect to home
+  useEffect(() => {
+    if (user) {
+      navigate('/home');
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -33,15 +42,13 @@ const Signup: React.FC = () => {
       return;
     }
 
-    // Simulate account creation - in a real app, this would call an API
-    setTimeout(() => {
-      // Store user info in localStorage (in a real app would use proper auth state management)
-      localStorage.setItem('user', JSON.stringify({ name, email, phone }));
-      
+    try {
+      await signUp(email, password, name, phone);
+      navigate('/login');
+    } catch (error) {
+      // Error is handled in signUp function
       setLoading(false);
-      toast.success('Account created successfully');
-      navigate('/permissions');
-    }, 1000);
+    }
   };
 
   return (

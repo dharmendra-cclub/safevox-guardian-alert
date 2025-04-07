@@ -35,8 +35,9 @@ const MapView: React.FC<MapViewProps> = ({
     // Check if Google Maps API is loaded
     if (!window.google || !window.google.maps) {
       // Load Google Maps API script if not loaded
+      const apiKey = 'AIzaSyBEwcosHlnDAm1DbD7pfDRkoihXD4SfdUg';
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBEwcosHlnDAm1DbD7pfDRkoihXD4SfdUg&callback=initMap`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
@@ -47,7 +48,9 @@ const MapView: React.FC<MapViewProps> = ({
       };
 
       return () => {
-        document.head.removeChild(script);
+        if (script.parentNode) {
+          document.head.removeChild(script);
+        }
         delete window.initMap;
       };
     } else {
@@ -64,7 +67,7 @@ const MapView: React.FC<MapViewProps> = ({
       if (showMarker) {
         if (markerRef.current) {
           markerRef.current.setPosition(userLocation);
-        } else {
+        } else if (window.google && window.google.maps) {
           markerRef.current = new google.maps.Marker({
             position: userLocation,
             map: mapInstanceRef.current,
@@ -84,7 +87,7 @@ const MapView: React.FC<MapViewProps> = ({
 
   // Initialize map instance
   const initializeMap = () => {
-    if (!mapRef.current || !window.google) return;
+    if (!mapRef.current || !window.google || !window.google.maps) return;
 
     // Try to get user's location
     if (navigator.geolocation) {
