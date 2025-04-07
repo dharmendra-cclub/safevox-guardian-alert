@@ -1,6 +1,16 @@
 
+/// <reference types="google.maps" />
+
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+
+// Declare global Google Maps types
+declare global {
+  interface Window {
+    google: typeof google;
+    initMap: () => void;
+  }
+}
 
 interface MapViewProps {
   satelliteView?: boolean;
@@ -138,15 +148,7 @@ const MapView: React.FC<MapViewProps> = ({
     }
   };
 
-  // Define typings for the global window object
-  declare global {
-    interface Window {
-      initMap: () => void;
-      google: any;
-    }
-  }
-
-  return <div ref={mapRef} className="map-container" />;
+  return <div ref={mapRef} className="map-container h-full w-full" />;
 };
 
 export default MapView;
