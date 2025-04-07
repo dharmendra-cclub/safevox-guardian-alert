@@ -84,6 +84,8 @@ export type Database = {
       }
       users: {
         Row: {
+          address: string | null
+          avatar_url: string | null
           created_at: string | null
           email: string
           full_name: string | null
@@ -92,6 +94,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
+          avatar_url?: string | null
           created_at?: string | null
           email: string
           full_name?: string | null
@@ -100,6 +104,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
+          avatar_url?: string | null
           created_at?: string | null
           email?: string
           full_name?: string | null
@@ -112,6 +118,7 @@ export type Database = {
       voice_activations: {
         Row: {
           code_word: string
+          contacts: string[] | null
           created_at: string | null
           id: string
           message: string
@@ -120,6 +127,7 @@ export type Database = {
         }
         Insert: {
           code_word: string
+          contacts?: string[] | null
           created_at?: string | null
           id?: string
           message: string
@@ -128,6 +136,7 @@ export type Database = {
         }
         Update: {
           code_word?: string
+          contacts?: string[] | null
           created_at?: string | null
           id?: string
           message?: string

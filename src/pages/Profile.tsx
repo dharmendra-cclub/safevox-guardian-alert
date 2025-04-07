@@ -80,7 +80,8 @@ const Profile: React.FC = () => {
           id: user.id,
           full_name: defaultProfile.full_name,
           email: defaultProfile.email,
-          phone: defaultProfile.phone
+          phone: defaultProfile.phone,
+          address: defaultProfile.address
         });
       }
     } catch (error) {
