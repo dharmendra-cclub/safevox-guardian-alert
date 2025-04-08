@@ -22,6 +22,7 @@ const MapView: React.FC<MapViewProps> = ({
   const [markerInstance, setMarkerInstance] = useState<google.maps.Marker | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const scriptId = "google-maps-script";
 
   // Get user's location if not provided
   useEffect(() => {
@@ -42,8 +43,8 @@ const MapView: React.FC<MapViewProps> = ({
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,  // Increased timeout to 10 seconds
-          maximumAge: 5000 // Allowing cached position up to 5 seconds
+          timeout: 30000,  // Increased timeout to 30 seconds
+          maximumAge: 10000 // Allowing cached position up to 10 seconds
         }
       );
     } else {
@@ -73,8 +74,8 @@ const MapView: React.FC<MapViewProps> = ({
         },
         {
           enableHighAccuracy: true,
-          maximumAge: 3000,   // Allow position to be 3 seconds old
-          timeout: 15000      // Increased timeout to 15 seconds
+          maximumAge: 5000,   // Allow position to be 5 seconds old
+          timeout: 30000      // Increased timeout to 30 seconds
         }
       );
     }
@@ -86,9 +87,10 @@ const MapView: React.FC<MapViewProps> = ({
     };
   }, [showMarker, initialLocation, userLocation]);
 
+  // Improved Google Maps script loading
   useEffect(() => {
     const loadGoogleMapsScript = () => {
-      // If the script is already loaded or loading
+      // If the script is already loaded
       if (window.google && window.google.maps) {
         initMap();
         return;
@@ -106,23 +108,28 @@ const MapView: React.FC<MapViewProps> = ({
         return;
       }
 
+      // Check if script tag already exists
+      if (document.getElementById(scriptId)) {
+        document.getElementById(scriptId)?.remove();
+      }
+
       // Mark the script as loading
       window.googleMapsLoaded = true;
       
-      // Remove any existing Google Maps scripts to prevent duplicates
-      document.querySelectorAll('script[src*="maps.googleapis.com/maps/api/js"]').forEach(script => {
-        script.remove();
-      });
-
       // Create and append the script
       const apiKey = 'AIzaSyBEwcosHlnDAm1DbD7pfDRkoihXD4SfdUg';
       const script = document.createElement('script');
+      script.id = scriptId;
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMap`;
       script.async = true;
       script.defer = true;
 
       // Define the callback globally
-      window.initGoogleMap = initMap;
+      window.initGoogleMap = () => {
+        initMap();
+        // Reset the flag once map is initialized
+        window.googleMapsLoaded = false;
+      };
 
       // Handle errors
       script.onerror = () => {
@@ -168,6 +175,7 @@ const MapView: React.FC<MapViewProps> = ({
       }
     };
 
+    // Only attempt to load the script if we have a location
     if (userLocation || initialLocation) {
       loadGoogleMapsScript();
     }

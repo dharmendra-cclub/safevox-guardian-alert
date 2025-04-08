@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, User, Phone, Mail, MapPin, Upload, Camera } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, MapPin, Camera } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -119,22 +118,29 @@ const Profile: React.FC = () => {
       // Upload avatar image
       const fileExt = avatarFile.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const filePath = `${user.id}/${fileName}`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('user-content')
-        .upload(filePath, avatarFile);
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, avatarFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
       
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw uploadError;
+      }
       
       // Get public URL
-      const { data } = supabase.storage
-        .from('user-content')
+      const { data: urlData } = supabase.storage
+        .from('avatars')
         .getPublicUrl(filePath);
       
-      return data.publicUrl;
+      return urlData.publicUrl;
     } catch (error) {
       console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload avatar image');
       return null;
     }
   };
