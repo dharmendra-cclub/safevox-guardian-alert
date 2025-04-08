@@ -3,7 +3,7 @@ export interface CodeWord {
   id: string;
   word: string;
   message: string;
-  contacts?: string[]; // Array of contact IDs
+  contacts: string[]; // Array of contact IDs
 }
 
 export interface VoiceActivationDB {
@@ -11,7 +11,7 @@ export interface VoiceActivationDB {
   user_id: string;
   code_word: string;
   message: string;
-  contacts: string[]; // Array of contact IDs
+  contacts: string[] | null; // Array of contact IDs
   created_at: string;
   updated_at: string;
 }

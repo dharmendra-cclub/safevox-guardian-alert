@@ -58,7 +58,7 @@ const Profile: React.FC = () => {
           email: user.email || '',
           phone: data.phone || '',
           address: data.address || '',
-          avatar_url: data.avatar_url || null
+          avatar_url: data.avatar_url
         };
         
         setProfile(profileData);
@@ -81,7 +81,8 @@ const Profile: React.FC = () => {
           full_name: defaultProfile.full_name,
           email: defaultProfile.email,
           phone: defaultProfile.phone,
-          address: defaultProfile.address
+          address: defaultProfile.address,
+          avatar_url: defaultProfile.avatar_url
         });
       }
     } catch (error) {
