@@ -14,6 +14,7 @@ class SOSService {
   private emergencyContacts: EmergencyContact[] = [];
   private userLocation: { lat: number, lng: number } | null = null;
   private locationWatchId: number | null = null;
+  private audioStreamingUrl: string | null = null;
 
   constructor() {
     // Start watching location immediately
@@ -81,6 +82,9 @@ class SOSService {
         toast.error('Failed to start recording. Check microphone permissions.');
       }
       
+      // Generate audio streaming URL (in a real app, this would be a real streaming URL)
+      this.audioStreamingUrl = `https://safevox.io/stream/${this.userId}`;
+      
       // Get emergency contacts - either all or specific ones
       await this.fetchEmergencyContacts();
       
@@ -100,8 +104,9 @@ class SOSService {
       const locationUrl = location 
         ? `https://maps.google.com/?q=${location.lat},${location.lng}` 
         : '';
+      const audioUrl = this.audioStreamingUrl || '';
       
-      const fullMessage = `${userMessage} Track my location: ${locationUrl}`;
+      const fullMessage = `${userMessage} Track my location: ${locationUrl} Listen: ${audioUrl}`;
       
       // In a real application, send SMS via a backend service
       // For demo purposes, we'll log the details
@@ -109,8 +114,12 @@ class SOSService {
         userId: this.userId,
         location,
         contacts: contactsToNotify,
-        message: fullMessage
+        message: fullMessage,
+        audioStreamingUrl: this.audioStreamingUrl
       });
+      
+      // Save the SOS activation to history
+      await this.saveSOSHistory(location, userMessage, contactsToNotify.map(c => c.id));
       
       // Simulate sending SMS
       contactsToNotify.forEach(contact => {
@@ -129,6 +138,27 @@ class SOSService {
     } catch (error) {
       console.error('Error activating SOS:', error);
       return false;
+    }
+  }
+
+  private async saveSOSHistory(
+    location: { lat: number, lng: number } | null,
+    message: string,
+    contactIds: string[]
+  ) {
+    if (!this.userId) return;
+    
+    try {
+      // In a real app, save to a 'sos_history' table
+      console.log('Saving SOS history:', {
+        userId: this.userId,
+        timestamp: new Date().toISOString(),
+        location,
+        message,
+        contactIds
+      });
+    } catch (error) {
+      console.error('Error saving SOS history:', error);
     }
   }
 
@@ -199,6 +229,10 @@ class SOSService {
 
   public isSOSActivated(): boolean {
     return this.isActivated;
+  }
+
+  public getAudioStreamingUrl(): string | null {
+    return this.audioStreamingUrl;
   }
 }
 

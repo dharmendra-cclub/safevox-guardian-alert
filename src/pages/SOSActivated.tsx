@@ -2,12 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Phone, AlertTriangle } from 'lucide-react';
+import { Phone, AlertTriangle, FireExtinguisher, AmbulanceIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import MapView from '@/components/MapView';
 import { useAuth } from '@/hooks/useAuth';
 import { sosService } from '@/services/SOSService';
 import { audioRecordingService } from '@/services/AudioRecordingService';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const SOSActivated: React.FC = () => {
   const navigate = useNavigate();
@@ -73,7 +74,9 @@ const SOSActivated: React.FC = () => {
     const phoneNumbers: Record<string, string> = {
       'Police': '911',
       'Ambulance': '911',
-      'Others': '911'
+      'Fire': '911',
+      'Coast Guard': '911',
+      'Mountain Rescue': '911'
     };
     
     const phoneNumber = phoneNumbers[service] || '911';
@@ -126,14 +129,45 @@ const SOSActivated: React.FC = () => {
               <span>Ambulance</span>
             </Button>
             
-            <Button 
-              variant="outline" 
-              className="flex flex-col items-center justify-center h-20"
-              onClick={() => handleEmergencyCall('Others')}
-            >
-              <Phone className="h-5 w-5 mb-1" />
-              <span>Others</span>
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="flex flex-col items-center justify-center h-20"
+                >
+                  <Phone className="h-5 w-5 mb-1" />
+                  <span>Others</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56" align="center">
+                <div className="grid gap-2">
+                  <Button 
+                    variant="ghost" 
+                    className="justify-start"
+                    onClick={() => handleEmergencyCall('Fire')}
+                  >
+                    <Phone className="mr-2 h-4 w-4" />
+                    <span>Fire Department</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="justify-start"
+                    onClick={() => handleEmergencyCall('Coast Guard')}
+                  >
+                    <Phone className="mr-2 h-4 w-4" />
+                    <span>Coast Guard</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="justify-start"
+                    onClick={() => handleEmergencyCall('Mountain Rescue')}
+                  >
+                    <Phone className="mr-2 h-4 w-4" />
+                    <span>Mountain Rescue</span>
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           
           <Button
