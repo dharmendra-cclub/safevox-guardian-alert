@@ -23,10 +23,19 @@ const MapView: React.FC<MapViewProps> = ({
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const scriptId = "google-maps-script";
+  const googleMapsLoadedKey = "googleMapsLoaded";
+  const defaultLocation = { lat: 40.7128, lng: -74.0060 }; // New York as fallback
 
   // Get user's location if not provided
   useEffect(() => {
     if (!initialLocation) {
+      if (!navigator.geolocation) {
+        console.error("Geolocation is not supported by this browser.");
+        setLocationError("Geolocation is not supported. Using default location.");
+        setUserLocation(defaultLocation);
+        return;
+      }
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({
@@ -39,12 +48,12 @@ const MapView: React.FC<MapViewProps> = ({
           console.error("Error getting location:", error);
           setLocationError("Could not get your location. Using default.");
           // Default fallback location
-          setUserLocation({ lat: 17.3850, lng: 78.4867 });
+          setUserLocation(defaultLocation);
         },
         {
           enableHighAccuracy: true,
-          timeout: 30000,  // Increased timeout to 30 seconds
-          maximumAge: 10000 // Allowing cached position up to 10 seconds
+          timeout: 30000,  // 30 seconds
+          maximumAge: 10000 // 10 seconds cache
         }
       );
     } else {
@@ -69,13 +78,13 @@ const MapView: React.FC<MapViewProps> = ({
         (error) => {
           console.error("Error watching location:", error);
           if (!userLocation) {
-            setUserLocation({ lat: 17.3850, lng: 78.4867 });
+            setUserLocation(defaultLocation);
           }
         },
         {
           enableHighAccuracy: true,
-          maximumAge: 5000,   // Allow position to be 5 seconds old
-          timeout: 30000      // Increased timeout to 30 seconds
+          maximumAge: 5000,   // 5 seconds
+          timeout: 30000      // 30 seconds
         }
       );
     }
@@ -90,31 +99,34 @@ const MapView: React.FC<MapViewProps> = ({
   // Improved Google Maps script loading
   useEffect(() => {
     const loadGoogleMapsScript = () => {
-      // If the script is already loaded
       if (window.google && window.google.maps) {
+        console.log("Google Maps API already loaded, initializing map");
         initMap();
         return;
       }
 
-      // If another component is already loading the script
-      if (window.googleMapsLoaded) {
-        // Wait for the script to be fully loaded
-        const checkGoogleMapsLoaded = setInterval(() => {
+      if (window[googleMapsLoadedKey]) {
+        console.log("Google Maps script is loading, waiting...");
+        const checkInterval = setInterval(() => {
           if (window.google && window.google.maps) {
-            clearInterval(checkGoogleMapsLoaded);
+            clearInterval(checkInterval);
+            console.log("Google Maps API loaded after waiting, initializing map");
             initMap();
           }
-        }, 100);
+        }, 200);
         return;
       }
 
-      // Check if script tag already exists
-      if (document.getElementById(scriptId)) {
-        document.getElementById(scriptId)?.remove();
+      // Clean up any existing script to prevent duplicates
+      const existingScript = document.getElementById(scriptId);
+      if (existingScript) {
+        console.log("Removing existing Google Maps script");
+        existingScript.remove();
       }
 
-      // Mark the script as loading
-      window.googleMapsLoaded = true;
+      console.log("Loading Google Maps API script");
+      // Mark as loading
+      window[googleMapsLoadedKey] = true;
       
       // Create and append the script
       const apiKey = 'AIzaSyBEwcosHlnDAm1DbD7pfDRkoihXD4SfdUg';
@@ -126,26 +138,38 @@ const MapView: React.FC<MapViewProps> = ({
 
       // Define the callback globally
       window.initGoogleMap = () => {
+        console.log("initGoogleMap callback executing");
         initMap();
-        // Reset the flag once map is initialized
-        window.googleMapsLoaded = false;
+        window[googleMapsLoadedKey] = false;
       };
 
       // Handle errors
       script.onerror = () => {
         console.error('Failed to load Google Maps API');
-        window.googleMapsLoaded = false;
+        window[googleMapsLoadedKey] = false;
+        setLocationError("Failed to load map. Please check your internet connection.");
       };
 
       document.head.appendChild(script);
     };
 
     const initMap = () => {
-      if (!mapRef.current) return;
+      if (!mapRef.current) {
+        console.error("Map container ref not available");
+        return;
+      }
 
       try {
+        console.log("Initializing map with location:", initialLocation || userLocation || defaultLocation);
         // Use provided location, user location, or default location
-        const location = initialLocation || userLocation || { lat: 17.3850, lng: 78.4867 };
+        const location = initialLocation || userLocation || defaultLocation;
+
+        // Check if map container has dimensions
+        const mapContainer = mapRef.current;
+        if (mapContainer.clientHeight === 0 || mapContainer.clientWidth === 0) {
+          console.error("Map container has zero width or height:", 
+            mapContainer.clientWidth, mapContainer.clientHeight);
+        }
 
         const mapOptions: google.maps.MapOptions = {
           center: location,
@@ -159,6 +183,7 @@ const MapView: React.FC<MapViewProps> = ({
 
         const map = new google.maps.Map(mapRef.current, mapOptions);
         setMapInstance(map);
+        console.log("Map instance created successfully");
 
         // Add marker if needed
         if (showMarker && location) {
@@ -169,29 +194,37 @@ const MapView: React.FC<MapViewProps> = ({
             title: 'Your Location'
           });
           setMarkerInstance(marker);
+          console.log("Marker added to map");
         }
       } catch (error) {
         console.error('Error initializing map:', error);
+        setLocationError("Error initializing map. Please refresh the page.");
       }
     };
 
-    // Only attempt to load the script if we have a location
-    if (userLocation || initialLocation) {
+    // Only load the script if we have a location or are using the default
+    const locationAvailable = userLocation || initialLocation || defaultLocation;
+    if (locationAvailable) {
+      console.log("Location available, attempting to load Google Maps script");
       loadGoogleMapsScript();
+    } else {
+      console.log("No location available yet, waiting...");
     }
 
     // Cleanup
     return () => {
-      // Remove global callback
       if (window.initGoogleMap) {
+        console.log("Cleaning up Google Maps initialization");
+        // @ts-ignore
         delete window.initGoogleMap;
       }
     };
-  }, [satelliteView, showMarker, initialLocation, userLocation]);
+  }, [satelliteView, showMarker, initialLocation, userLocation, defaultLocation]);
 
   // Update map type if satelliteView prop changes
   useEffect(() => {
     if (mapInstance) {
+      console.log("Updating map type:", satelliteView ? 'satellite' : 'roadmap');
       mapInstance.setMapTypeId(satelliteView ? 'satellite' : 'roadmap');
     }
   }, [satelliteView, mapInstance]);
@@ -201,17 +234,22 @@ const MapView: React.FC<MapViewProps> = ({
     const locationToUse = initialLocation || userLocation;
     
     if (markerInstance && locationToUse) {
+      console.log("Updating marker position:", locationToUse);
       markerInstance.setPosition(locationToUse);
-      mapInstance?.panTo(locationToUse);
+      
+      if (mapInstance) {
+        mapInstance.panTo(locationToUse);
+      }
     }
   }, [initialLocation, userLocation, markerInstance, mapInstance]);
 
   return (
-    <div 
-      ref={mapRef} 
-      className="w-full h-full"
-      style={{ background: '#e5e5e5' }}
-    >
+    <div className="h-full w-full relative">
+      <div 
+        ref={mapRef} 
+        className="w-full h-full absolute inset-0"
+        style={{ background: '#e5e5e5', minHeight: '300px' }}
+      />
       {locationError && (
         <div className="absolute top-4 left-0 right-0 mx-auto w-max bg-red-100 text-red-800 px-4 py-2 rounded z-10">
           {locationError}
@@ -227,6 +265,7 @@ declare global {
     initGoogleMap: () => void;
     google: any;
     googleMapsLoaded: boolean;
+    [key: string]: any; // Allow dynamic property access
   }
 }
 
