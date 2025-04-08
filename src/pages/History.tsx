@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, MapPin, Mic, Users, ExternalLink } from 'lucide-react
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 
 interface SOSHistoryItem {
   id: string;
