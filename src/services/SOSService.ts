@@ -15,6 +15,7 @@ class SOSService {
   private userLocation: { lat: number, lng: number } | null = null;
   private locationWatchId: number | null = null;
   private audioStreamingUrl: string | null = null;
+  private locationError: boolean = false;
 
   constructor() {
     // Start watching location immediately
@@ -27,21 +28,47 @@ class SOSService {
   }
 
   private startLocationTracking() {
+    // First try to get current position before setting up watch
     if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          this.locationError = false;
+        },
+        (error) => {
+          console.error('Error getting initial location:', error);
+          this.locationError = true;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,  // Increased timeout to 10 seconds
+          maximumAge: 0
+        }
+      );
+      
+      // Then set up continuous tracking
       this.locationWatchId = navigator.geolocation.watchPosition(
         (position) => {
           this.userLocation = {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           };
+          this.locationError = false;
         },
         (error) => {
           console.error('Error tracking location:', error);
+          // Don't set locationError to true if we already have a location
+          if (!this.userLocation) {
+            this.locationError = true;
+          }
         },
         {
           enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 5000
+          maximumAge: 5000,  // Accept positions up to 5 seconds old
+          timeout: 15000     // Wait up to 15 seconds for a position
         }
       );
     }
@@ -211,8 +238,8 @@ class SOSService {
         },
         {
           enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
+          timeout: 10000, // Increased timeout from 5000 to 10000
+          maximumAge: 5000 // Allow positions up to 5 seconds old
         }
       );
     });

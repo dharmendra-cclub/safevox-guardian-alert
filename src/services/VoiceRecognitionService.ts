@@ -55,6 +55,7 @@ class VoiceRecognitionService {
   private isListening: boolean = false;
   private userId: string | null = null;
   private codeWords: CodeWord[] = [];
+  private restartTimeout: number | null = null;
   
   constructor() {
     // Check if browser supports SpeechRecognition
@@ -132,18 +133,48 @@ class VoiceRecognitionService {
     
     this.recognition.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
-      // Restart if error occurs
-      if (this.isListening) {
-        this.stopListening();
-        this.startListening();
+      
+      // Only restart if it's not caused by an 'already-running' error
+      if (event.error !== 'not-allowed' && this.isListening) {
+        // Use a timeout to avoid immediate restart
+        if (this.restartTimeout) {
+          clearTimeout(this.restartTimeout);
+        }
+        
+        console.log('Stopped listening for codewords');
+        this.isListening = false;
+        
+        // Delayed restart
+        this.restartTimeout = window.setTimeout(() => {
+          if (this.recognition) {
+            try {
+              this.recognition.start();
+              this.isListening = true;
+              console.log('Restarted listening for codewords after error');
+            } catch (e) {
+              console.error('Error restarting speech recognition:', e);
+            }
+          }
+        }, 2000);
       }
     };
     
     this.recognition.onend = () => {
       console.log('Speech recognition ended');
-      // Restart if still supposed to be listening
-      if (this.isListening) {
-        this.recognition?.start();
+      
+      // Restart if still supposed to be listening and not already restarting
+      if (this.isListening && !this.restartTimeout) {
+        try {
+          this.recognition?.start();
+          console.log('Restarted listening for codewords');
+        } catch (error) {
+          console.error('Error restarting speech recognition:', error);
+          // If restart fails, set timeout to try again
+          this.isListening = false;
+          this.restartTimeout = window.setTimeout(() => {
+            this.startListening();
+          }, 1000);
+        }
       }
     };
   }
@@ -154,6 +185,18 @@ class VoiceRecognitionService {
       return false;
     }
     
+    // Clear any pending restart
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
+    }
+    
+    // If already listening, don't start again
+    if (this.isListening) {
+      console.log('Already listening for codewords');
+      return true;
+    }
+    
     try {
       this.recognition.start();
       this.isListening = true;
@@ -161,12 +204,30 @@ class VoiceRecognitionService {
       return true;
     } catch (error) {
       console.error('Error starting speech recognition:', error);
+      
+      // If failed because already started, mark as listening
+      if (error instanceof DOMException && error.name === 'InvalidStateError') {
+        this.isListening = true;
+        return true;
+      }
+      
       return false;
     }
   }
 
   public stopListening() {
     if (!this.recognition) return false;
+    
+    // Clear any pending restart
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
+    }
+    
+    // If not listening, no need to stop
+    if (!this.isListening) {
+      return true;
+    }
     
     try {
       this.recognition.stop();
@@ -175,6 +236,7 @@ class VoiceRecognitionService {
       return true;
     } catch (error) {
       console.error('Error stopping speech recognition:', error);
+      this.isListening = false;
       return false;
     }
   }
