@@ -4,6 +4,7 @@ declare namespace google.maps {
     constructor(mapDiv: Element, opts?: MapOptions);
     setMapTypeId(mapTypeId: string): void;
     panTo(latLng: LatLng | LatLngLiteral): void;
+    addListener(eventName: string, handler: Function): MapsEventListener;
   }
 
   class Marker {
