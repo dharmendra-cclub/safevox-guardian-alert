@@ -3,6 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 import { loadGoogleMapsScript, cleanupGoogleMapsScript } from '../utils/mapLoader';
 import useLocation from './useLocation';
 import { MapHookProps } from '../types';
+import { useMap } from '../context/MapContext';
 
 export default function useMapInitialization({
   satelliteView,
@@ -14,15 +15,18 @@ export default function useMapInitialization({
   const [markerInstance, setMarkerInstance] = useState<google.maps.Marker | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   
-  // Get user location
-  const { userLocation, locationError, setLocationError } = useLocation(
+  // Get location from context or initialLocation
+  const { userLocation, locationError, isLoadingLocation } = useLocation(
     initialLocation,
     showMarker
   );
+  
+  // Get map loaded state from context
+  const { mapLoaded, setMapLoaded } = useMap();
 
   // Initialize map when we have a location
   useEffect(() => {
-    if (!userLocation && !initialLocation) {
+    if (!userLocation) {
       // Wait for location before initializing map
       return;
     }
@@ -37,8 +41,8 @@ export default function useMapInitialization({
       }
 
       try {
-        // Use provided location or user location, but don't use a default anymore
-        const location = initialLocation || userLocation;
+        // Use the available location, which is either initialLocation or userLocation from context
+        const location = userLocation;
         
         if (!location) {
           console.log("No location available yet, waiting...");
@@ -83,16 +87,16 @@ export default function useMapInitialization({
         // Set loading to false once the map is initialized
         map.addListener('tilesloaded', () => {
           setIsLoading(false);
+          setMapLoaded(true);
         });
       } catch (error) {
         console.error('Error initializing map:', error);
-        setLocationError("Error initializing map. Please refresh the page.");
         setIsLoading(false);
       }
     };
 
     // Only load the script if we have a location
-    if (userLocation || initialLocation) {
+    if (userLocation) {
       console.log("Location available, attempting to load Google Maps script");
       loadGoogleMapsScript(initMap);
     } else {
@@ -103,7 +107,7 @@ export default function useMapInitialization({
     return () => {
       cleanupGoogleMapsScript();
     };
-  }, [satelliteView, showMarker, initialLocation, userLocation, setLocationError]);
+  }, [satelliteView, showMarker, initialLocation, userLocation, setMapLoaded]);
 
   // Update map type if satelliteView prop changes
   useEffect(() => {
@@ -115,7 +119,7 @@ export default function useMapInitialization({
 
   // Update marker position if location changes
   useEffect(() => {
-    const locationToUse = initialLocation || userLocation;
+    const locationToUse = userLocation;
     
     if (markerInstance && locationToUse) {
       console.log("Updating marker position:", locationToUse);
@@ -132,6 +136,6 @@ export default function useMapInitialization({
     mapInstance,
     markerInstance,
     locationError,
-    isLoading
+    isLoading: isLoading || isLoadingLocation
   };
 }
