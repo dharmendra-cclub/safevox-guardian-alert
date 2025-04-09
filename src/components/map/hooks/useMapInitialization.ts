@@ -13,6 +13,7 @@ export default function useMapInitialization({
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [markerInstance, setMarkerInstance] = useState<google.maps.Marker | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
   // Get user location
   const { userLocation, locationError, setLocationError } = useLocation(
@@ -22,9 +23,12 @@ export default function useMapInitialization({
 
   // Initialize map when we have a location
   useEffect(() => {
+    setIsLoading(true);
+    
     const initMap = () => {
       if (!mapRef.current) {
         console.error("Map container ref not available");
+        setIsLoading(false);
         return;
       }
 
@@ -65,9 +69,15 @@ export default function useMapInitialization({
           setMarkerInstance(marker);
           console.log("Marker added to map");
         }
+        
+        // Set loading to false once the map is initialized
+        map.addListener('tilesloaded', () => {
+          setIsLoading(false);
+        });
       } catch (error) {
         console.error('Error initializing map:', error);
         setLocationError("Error initializing map. Please refresh the page.");
+        setIsLoading(false);
       }
     };
 
@@ -112,6 +122,7 @@ export default function useMapInitialization({
     mapRef,
     mapInstance,
     markerInstance,
-    locationError
+    locationError,
+    isLoading
   };
 }
