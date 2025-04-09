@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import MapView from '@/components/MapView';
+import MapView from '@/components/map/MapView';
 import SOSButton from '@/components/SOSButton';
 import BottomNavBar from '@/components/BottomNavBar';
 import { sosService } from '@/services/SOSService';

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import MapView from '@/components/MapView';
+import MapView from '@/components/map/MapView';
 import SOSButton from '@/components/SOSButton';
 import BottomNavBar from '@/components/BottomNavBar';
 import SideBarMenu from '@/components/SideBarMenu';

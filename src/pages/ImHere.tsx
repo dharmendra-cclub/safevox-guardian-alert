@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Send, Share } from 'lucide-react';
 import { toast } from 'sonner';
-import MapView from '@/components/MapView';
+import MapView from '@/components/map/MapView';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';

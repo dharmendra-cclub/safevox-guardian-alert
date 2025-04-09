@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Phone, AlertTriangle, FireExtinguisher, AmbulanceIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import MapView from '@/components/MapView';
+import MapView from '@/components/map/MapView';
 import { useAuth } from '@/hooks/useAuth';
 import { sosService } from '@/services/SOSService';
 import { audioRecordingService } from '@/services/AudioRecordingService';
