@@ -90,7 +90,7 @@ const SOSActivated: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Emergency Banner */}
-      <div className="bg-[#222222]/80 p-4 flex flex-col items-center">
+      <div className="bg-[#222222]/80 p-4 flex flex-col items-center z-10">
         <AlertTriangle className="h-8 w-8 mb-1 text-[#934B49]" />
         <h1 className="text-xl font-bold text-[#934B49]">SOS Activated!!!</h1>
         <p className="text-sm">
@@ -107,7 +107,7 @@ const SOSActivated: React.FC = () => {
         />
         
         {/* Emergency Services */}
-        <div className="absolute bottom-0 left-0 right-0 bg-card/90 backdrop-blur-sm rounded-t-lg p-4">
+        <div className="absolute bottom-0 left-0 right-0 bg-card/90 backdrop-blur-sm rounded-t-lg p-4 z-10">
           <h2 className="text-lg font-semibold mb-3">Quick call emergency services</h2>
           
           <div className="grid grid-cols-3 gap-3 mb-4">

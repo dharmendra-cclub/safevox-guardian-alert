@@ -2,7 +2,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { loadGoogleMapsScript, cleanupGoogleMapsScript } from '../utils/mapLoader';
 import useLocation from './useLocation';
-import { DEFAULT_LOCATION } from '../utils/constants';
 import { MapHookProps } from '../types';
 
 export default function useMapInitialization({
@@ -23,6 +22,11 @@ export default function useMapInitialization({
 
   // Initialize map when we have a location
   useEffect(() => {
+    if (!userLocation && !initialLocation) {
+      // Wait for location before initializing map
+      return;
+    }
+    
     setIsLoading(true);
     
     const initMap = () => {
@@ -33,9 +37,15 @@ export default function useMapInitialization({
       }
 
       try {
-        console.log("Initializing map with location:", initialLocation || userLocation || DEFAULT_LOCATION);
-        // Use provided location, user location, or default location
-        const location = initialLocation || userLocation || DEFAULT_LOCATION;
+        // Use provided location or user location, but don't use a default anymore
+        const location = initialLocation || userLocation;
+        
+        if (!location) {
+          console.log("No location available yet, waiting...");
+          return;
+        }
+        
+        console.log("Initializing map with location:", location);
 
         // Check if map container has dimensions
         const mapContainer = mapRef.current;
@@ -81,9 +91,8 @@ export default function useMapInitialization({
       }
     };
 
-    // Only load the script if we have a location or are using the default
-    const locationAvailable = userLocation || initialLocation || DEFAULT_LOCATION;
-    if (locationAvailable) {
+    // Only load the script if we have a location
+    if (userLocation || initialLocation) {
       console.log("Location available, attempting to load Google Maps script");
       loadGoogleMapsScript(initMap);
     } else {

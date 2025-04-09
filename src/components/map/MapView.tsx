@@ -21,11 +21,11 @@ const MapView: React.FC<MapViewProps> = ({
   });
 
   return (
-    <div className="h-full w-full relative">
+    <div className="absolute inset-0">
       <div 
         ref={mapRef} 
-        className="w-full h-full absolute inset-0"
-        style={{ background: '#e5e5e5', minHeight: '300px' }}
+        className="w-full h-full"
+        style={{ minHeight: '300px' }}
       />
       
       {isLoading && (

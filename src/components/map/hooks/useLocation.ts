@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { DEFAULT_LOCATION, GEOLOCATION_OPTIONS, WATCH_POSITION_OPTIONS } from '../utils/constants';
+import { GEOLOCATION_OPTIONS, WATCH_POSITION_OPTIONS } from '../utils/constants';
 import { LocationState } from '../types';
 
 /**
@@ -22,8 +22,7 @@ export default function useLocation(
 
     if (!navigator.geolocation) {
       console.error("Geolocation is not supported by this browser.");
-      setLocationError("Geolocation is not supported. Using default location.");
-      setUserLocation(DEFAULT_LOCATION);
+      setLocationError("Geolocation is not supported by this browser.");
       return;
     }
 
@@ -37,9 +36,7 @@ export default function useLocation(
       },
       (error) => {
         console.error("Error getting location:", error);
-        setLocationError("Could not get your location. Using default.");
-        // Default fallback location
-        setUserLocation(DEFAULT_LOCATION);
+        setLocationError("Could not get your location. Please check your permissions.");
       },
       GEOLOCATION_OPTIONS
     );
@@ -61,9 +58,6 @@ export default function useLocation(
         },
         (error) => {
           console.error("Error watching location:", error);
-          if (!userLocation) {
-            setUserLocation(DEFAULT_LOCATION);
-          }
         },
         WATCH_POSITION_OPTIONS
       );

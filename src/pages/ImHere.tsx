@@ -149,7 +149,7 @@ const ImHere: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="p-4 flex items-center bg-card border-b border-border">
+      <div className="p-4 flex items-center bg-card border-b border-border z-10">
         <Button
           variant="ghost"
           size="icon"
@@ -162,7 +162,7 @@ const ImHere: React.FC = () => {
       </div>
 
       {/* Map View */}
-      <div className="relative flex-1">
+      <div className="flex-1 relative">
         <MapView 
           satelliteView={true} 
           showMarker={true}
@@ -171,7 +171,7 @@ const ImHere: React.FC = () => {
         
         {/* Share button */}
         <Button
-          className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm"
+          className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm z-10"
           onClick={handleShareLink}
         >
           <Share className="mr-2 h-4 w-4" />
@@ -180,7 +180,7 @@ const ImHere: React.FC = () => {
       </div>
 
       {/* Contacts Selection */}
-      <div className="p-4 bg-card border-t border-border">
+      <div className="p-4 bg-card border-t border-border z-10">
         <h2 className="text-lg font-semibold mb-3">Send to Emergency Contacts</h2>
         
         {loading ? (

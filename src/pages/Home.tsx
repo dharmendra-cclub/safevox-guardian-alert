@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
@@ -23,18 +22,15 @@ const Home: React.FC = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userInitials, setUserInitials] = useState('');
 
-  // Set user ID for services and get location
   useEffect(() => {
     if (user) {
       sosService.setUserId(user.id);
       voiceRecognitionService.setUserId(user.id);
       fetchUserProfile();
       
-      // Start voice recognition
       voiceRecognitionService.startListening();
     }
 
-    // Get current location
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserLocation({
@@ -48,7 +44,6 @@ const Home: React.FC = () => {
       }
     );
     
-    // Cleanup function
     return () => {
       voiceRecognitionService.stopListening();
     };
@@ -69,7 +64,6 @@ const Home: React.FC = () => {
       if (data) {
         setAvatarUrl(data.avatar_url);
         
-        // Set initials as fallback
         if (data.full_name) {
           const initials = data.full_name
             .split(' ')
@@ -98,8 +92,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Top Navigation Bar */}
-      <div className="bg-[#000000] p-4 flex items-center justify-between">
+      <div className="bg-[#000000] p-4 flex items-center justify-between z-10">
         <Button
           variant="ghost"
           size="icon"
@@ -127,7 +120,6 @@ const Home: React.FC = () => {
         </Avatar>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 relative">
         <MapView 
           satelliteView={true} 
@@ -135,14 +127,11 @@ const Home: React.FC = () => {
           initialLocation={userLocation || undefined}
         />
         
-        {/* SOS Button */}
         <SOSButton onClick={handleSOSPress} className="bottom-8 z-50" />
       </div>
 
-      {/* Bottom Navigation */}
       <BottomNavBar />
       
-      {/* Sidebar Menu */}
       <SideBarMenu 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)} 

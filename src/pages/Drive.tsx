@@ -75,7 +75,7 @@ const Drive: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="bg-safevox-primary p-4 flex items-center justify-center">
+      <div className="bg-safevox-primary p-4 flex items-center justify-center z-10">
         <Button
           variant="ghost"
           size="icon"
@@ -96,7 +96,7 @@ const Drive: React.FC = () => {
         />
         
         {/* Volume Control */}
-        <div className="absolute top-4 left-4 right-4 bg-card/80 backdrop-blur-sm rounded-lg p-3 flex items-center">
+        <div className="absolute top-4 left-4 right-4 bg-card/80 backdrop-blur-sm rounded-lg p-3 flex items-center z-10">
           <Volume2 className="mr-3" />
           <Slider
             value={volume}
@@ -108,7 +108,7 @@ const Drive: React.FC = () => {
         </div>
         
         {/* Drive Status */}
-        <div className="absolute bottom-24 left-0 right-0 bg-card/80 backdrop-blur-sm p-3">
+        <div className="absolute bottom-24 left-0 right-0 bg-card/80 backdrop-blur-sm p-3 z-10">
           <p className="text-center text-sm mb-2">
             {isDriving 
               ? 'Driving mode active. Accident detection enabled.' 
