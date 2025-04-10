@@ -107,8 +107,8 @@ const Drive: React.FC = () => {
           />
         </div>
         
-        {/* Drive Status */}
-        <div className="absolute bottom-24 left-0 right-0 bg-card/80 backdrop-blur-sm p-3 z-10">
+        {/* Drive Status - Move upward to avoid overlap with SOS button */}
+        <div className="absolute bottom-32 left-0 right-0 bg-card/80 backdrop-blur-sm p-3 z-10">
           <p className="text-center text-sm mb-2">
             {isDriving 
               ? 'Driving mode active. Accident detection enabled.' 
@@ -123,7 +123,7 @@ const Drive: React.FC = () => {
         </div>
         
         {/* SOS Button */}
-        <SOSButton onClick={handleSOSPress} className="bottom-8 z-50" />
+        <SOSButton onClick={handleSOSPress} />
       </div>
 
       {/* Bottom Navigation */}

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -7,16 +7,57 @@ import { User, Bell, Clock, Settings, HelpCircle, History, AlertTriangle, UserCo
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SideBarMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenChange: (open: boolean) => void;
 }
 
-const SideBarMenu: React.FC<SideBarMenuProps> = ({ isOpen, onClose }) => {
+const SideBarMenu: React.FC<SideBarMenuProps> = ({ isOpen, onClose, onOpenChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const [userInitials, setUserInitials] = React.useState('');
+  
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+  
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        setAvatarUrl(data.avatar_url);
+        
+        if (data.full_name) {
+          const initials = data.full_name
+            .split(' ')
+            .map(part => part[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+          
+          setUserInitials(initials);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
   
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -40,15 +81,15 @@ const SideBarMenu: React.FC<SideBarMenuProps> = ({ isOpen, onClose }) => {
   };
   
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="p-0 w-[300px]">
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent side="left" className="p-0 w-[300px] overflow-y-auto max-h-screen">
         {/* User Profile */}
         <div className="p-6 bg-primary/10">
           <div className="flex items-center space-x-4 mb-4">
             <Avatar className="h-16 w-16 border-2 border-primary">
-              <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name || 'User'} />
+              <AvatarImage src={avatarUrl} alt={user?.user_metadata?.full_name || 'User'} />
               <AvatarFallback className="text-lg">
-                {user?.user_metadata?.full_name ? user.user_metadata.full_name.charAt(0).toUpperCase() : 'U'}
+                {userInitials || (user?.user_metadata?.full_name ? user.user_metadata.full_name.charAt(0).toUpperCase() : 'U')}
               </AvatarFallback>
             </Avatar>
             <div>

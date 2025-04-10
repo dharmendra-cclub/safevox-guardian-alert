@@ -6,13 +6,17 @@ interface SOSButtonProps {
   onClick: () => void;
   className?: string;
   isActive?: boolean;
+  hide?: boolean;
 }
 
 const SOSButton: React.FC<SOSButtonProps> = ({ 
   onClick, 
   className,
-  isActive = false
+  isActive = false,
+  hide = false
 }) => {
+  if (hide) return null;
+  
   return (
     <button
       onClick={onClick}

@@ -3,110 +3,117 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
 import MapView from '@/components/map/MapView';
-import { useAuth } from '@/hooks/useAuth';
-import { sosService } from '@/services/sos';
-import { Contact } from './types';
+import BottomNavBar from '@/components/BottomNavBar';
 import ContactSelector from './components/ContactSelector';
 import LocationShareButton from './components/LocationShareButton';
 import ShareLinkButton from './components/ShareLinkButton';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { contactsService } from '@/services/sos';
+import { Contact } from './types';
+import SOSButton from '@/components/SOSButton';
+import { sosService } from '@/services/sos';
 
 const ImHerePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  
+  const [loading, setLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+
   useEffect(() => {
     if (user) {
-      sosService.setUserId(user.id);
+      contactsService.setUserId(user.id);
       fetchContacts();
+      
+      // Get user location
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          toast.error("Could not get your location. Please check permissions.");
+        }
+      );
     }
-    
-    // Get current location
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-      },
-      (error) => {
-        console.error("Error getting location:", error);
-        toast.error("Could not get your location. Please check permissions.");
-      }
-    );
   }, [user]);
-  
+
   const fetchContacts = async () => {
-    setLoading(true);
-    const data = await sosService.fetchEmergencyContacts();
-    // Convert EmergencyContact[] to Contact[] with selected property
-    setContacts(
-      data.map(contact => ({
+    try {
+      setLoading(true);
+      const fetchedContacts = await contactsService.fetchEmergencyContacts();
+      const contactsWithSelectionState = fetchedContacts.map(contact => ({
         ...contact,
-        selected: true
-      }))
-    );
-    setLoading(false);
+        selected: false
+      }));
+      setContacts(contactsWithSelectionState);
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+      toast.error('Failed to load contacts');
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
   const toggleContactSelection = (id: string) => {
     setContacts(prevContacts => 
       prevContacts.map(contact => 
-        contact.id === id 
-          ? { ...contact, selected: !contact.selected } 
-          : contact
+        contact.id === id ? { ...contact, selected: !contact.selected } : contact
       )
     );
   };
-  
-  const getSelectedContactIds = () => {
-    return contacts
-      .filter(contact => contact.selected)
-      .map(contact => contact.id);
-  };
-  
+
   const handleSendLocation = async () => {
     if (!userLocation) {
-      toast.error('Location not available');
+      toast.error('Unable to get your location');
       return;
     }
     
+    const selectedContacts = contacts.filter(contact => contact.selected);
+    if (selectedContacts.length === 0) {
+      toast.error('Please select at least one contact');
+      return;
+    }
+
     setSending(true);
+    
     try {
-      const selectedContactIds = getSelectedContactIds();
+      const selectedContactIds = selectedContacts.map(contact => contact.id);
       
-      if (selectedContactIds.length === 0) {
-        toast.warning('No contacts selected');
-        setSending(false);
-        return;
-      }
+      await sosService.activate(
+        "I'm here! This is my current location.", 
+        selectedContactIds
+      );
       
-      const customMessage = `I'm currently at this location.`;
+      toast.success(`Location sent to ${selectedContacts.length} contact${selectedContacts.length > 1 ? 's' : ''}`);
       
-      await sosService.activate(customMessage, selectedContactIds);
-      toast.success('Location sent successfully!');
+      // Reset selection
+      setContacts(prevContacts => 
+        prevContacts.map(contact => ({ ...contact, selected: false }))
+      );
     } catch (error) {
-      console.error('Error sharing location:', error);
+      console.error('Error sending location:', error);
       toast.error('Failed to send location');
     } finally {
       setSending(false);
     }
   };
-  
-  const getSelectedContactsCount = () => {
-    return contacts.filter(contact => contact.selected).length;
+
+  const handleSOSPress = () => {
+    sosService.activate();
+    toast.success('SOS activated!');
+    navigate('/sos-activated');
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Top Bar */}
+      {/* Header */}
       <div className="bg-safevox-primary p-4 flex items-center justify-center z-10">
         <Button
           variant="ghost"
@@ -118,7 +125,7 @@ const ImHerePage: React.FC = () => {
         </Button>
         <h1 className="text-lg font-semibold text-white">I'm Here</h1>
       </div>
-      
+
       {/* Main Content */}
       <div className="flex-1 relative">
         <MapView 
@@ -126,59 +133,35 @@ const ImHerePage: React.FC = () => {
           showMarker={true}
           initialLocation={userLocation || undefined}
         />
+
+        {/* Contact Selector */}
+        <div className="absolute top-4 left-4 right-4">
+          <ContactSelector 
+            contacts={contacts} 
+            loading={loading} 
+            toggleContactSelection={toggleContactSelection} 
+          />
+        </div>
         
-        <ShareLinkButton userLocation={userLocation} />
-        
-        {/* Bottom Panel */}
-        <Card className="absolute bottom-0 left-0 right-0 rounded-t-xl z-10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Share My Location</CardTitle>
-          </CardHeader>
+        {/* Action Buttons */}
+        <div className="absolute bottom-24 left-4 right-4 space-y-2">
+          <LocationShareButton 
+            onSendLocation={handleSendLocation} 
+            sending={sending} 
+            loading={loading}
+            contactsCount={contacts.filter(c => c.selected).length}
+          />
           
-          <CardContent>
-            <Tabs defaultValue="sms" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="sms">SMS</TabsTrigger>
-                <TabsTrigger value="social">Social Media</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="sms" className="space-y-4">
-                <ContactSelector 
-                  contacts={contacts}
-                  loading={loading}
-                  toggleContactSelection={toggleContactSelection}
-                />
-                
-                <LocationShareButton 
-                  onSendLocation={handleSendLocation}
-                  sending={sending}
-                  loading={loading}
-                  contactsCount={getSelectedContactsCount()}
-                />
-              </TabsContent>
-              
-              <TabsContent value="social">
-                <div className="grid grid-cols-3 gap-3 py-4">
-                  <Button variant="outline" className="flex flex-col items-center justify-center h-20">
-                    <span className="text-2xl mb-1">📱</span>
-                    <span>WhatsApp</span>
-                  </Button>
-                  
-                  <Button variant="outline" className="flex flex-col items-center justify-center h-20">
-                    <span className="text-2xl mb-1">💬</span>
-                    <span>Messenger</span>
-                  </Button>
-                  
-                  <Button variant="outline" className="flex flex-col items-center justify-center h-20">
-                    <span className="text-2xl mb-1">📧</span>
-                    <span>Email</span>
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+          <ShareLinkButton 
+            userLocation={userLocation}
+          />
+        </div>
+        
+        <SOSButton onClick={handleSOSPress} />
       </div>
+
+      {/* Bottom Navigation */}
+      <BottomNavBar />
     </div>
   );
 };

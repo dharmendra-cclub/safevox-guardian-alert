@@ -251,6 +251,9 @@ class VoiceRecognitionService {
     // Activate SOS with the codeword message and contacts
     sosService.activate(codeWord.message, codeWord.contacts);
     
+    // Navigate to SOS activated screen
+    window.location.href = '/sos-activated';
+    
     // Resume listening after a short delay
     setTimeout(() => {
       this.startListening();

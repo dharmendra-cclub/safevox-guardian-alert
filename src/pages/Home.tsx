@@ -128,14 +128,18 @@ const Home: React.FC = () => {
           initialLocation={userLocation || undefined}
         />
         
-        <SOSButton onClick={handleSOSPress} className="bottom-8 z-50" />
+        <SOSButton 
+          onClick={handleSOSPress} 
+          hide={isSidebarOpen} 
+        />
       </div>
 
       <BottomNavBar />
       
       <SideBarMenu 
         isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)} 
+        onClose={() => setIsSidebarOpen(false)}
+        onOpenChange={setIsSidebarOpen}
       />
     </div>
   );
