@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Clock, MapPin, Mic, Users, ExternalLink, AlertTriangle, Car, MessageCircle, TimerOff } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Mic, Users, AlertTriangle, Car, MessageCircle, TimerOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { Separator } from '@/components/ui/separator';
@@ -148,22 +148,22 @@ const History: React.FC = () => {
                   
                   <Badge 
                     className={`
-                      ${item.triggerType === 'button' ? 'bg-red-500/20 text-red-500' : ''}
-                      ${item.triggerType === 'codeword' ? 'bg-blue-500/20 text-blue-500' : ''}
-                      ${item.triggerType === 'crash' ? 'bg-orange-500/20 text-orange-500' : ''}
-                      ${item.triggerType === 'timer' ? 'bg-purple-500/20 text-purple-500' : ''}
+                      ${item.trigger_type === 'button' ? 'bg-red-500/20 text-red-500' : ''}
+                      ${item.trigger_type === 'codeword' ? 'bg-blue-500/20 text-blue-500' : ''}
+                      ${item.trigger_type === 'crash' ? 'bg-orange-500/20 text-orange-500' : ''}
+                      ${item.trigger_type === 'timer' ? 'bg-purple-500/20 text-purple-500' : ''}
                     `}
                   >
-                    {getTriggerIcon(item.triggerType)}
-                    {getTriggerLabel(item.triggerType)}
+                    {getTriggerIcon(item.trigger_type)}
+                    {getTriggerLabel(item.trigger_type)}
                   </Badge>
                 </div>
                 
                 <p className="text-sm mt-2">{item.message}</p>
                 
-                {item.codewordUsed && (
+                {item.codeword_used && (
                   <div className="mt-2 text-sm text-blue-400">
-                    <span>Codeword: "{item.codewordUsed}"</span>
+                    <span>Codeword: "{item.codeword_used}"</span>
                   </div>
                 )}
                 
@@ -186,7 +186,7 @@ const History: React.FC = () => {
                     variant="outline" 
                     size="sm"
                     className="flex items-center justify-center"
-                    onClick={() => playAudio(item.audioUrl)}
+                    onClick={() => playAudio(item.audio_url)}
                   >
                     <Mic className="h-4 w-4 mr-2" />
                     <span>Play Recording</span>
@@ -195,7 +195,7 @@ const History: React.FC = () => {
                 
                 <div className="mt-3 text-sm text-muted-foreground flex items-center">
                   <Users className="h-4 w-4 mr-2" />
-                  <span>Alerted {getContactNames(item.contactIds)}</span>
+                  <span>Alerted {getContactNames(item.contact_ids)}</span>
                 </div>
               </div>
             ))}

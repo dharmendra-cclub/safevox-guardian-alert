@@ -1,3 +1,4 @@
+
 // Types for SOS service
 
 // Location type

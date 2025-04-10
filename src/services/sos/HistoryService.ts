@@ -19,7 +19,7 @@ class HistoryService {
     if (!this.userId) return;
     
     try {
-      const historyEntry: SOSHistoryEntry = {
+      const historyEntry = {
         user_id: this.userId,
         timestamp: new Date().toISOString(),
         location: location,
@@ -54,7 +54,7 @@ class HistoryService {
       
       if (error) throw error;
       
-      return data || [];
+      return data as SOSHistoryEntry[] || [];
     } catch (error) {
       console.error('Error fetching SOS history:', error);
       return [];
