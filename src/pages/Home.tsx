@@ -82,6 +82,8 @@ const Home: React.FC = () => {
   };
 
   const handleSOSPress = () => {
+    // Set activation type to button
+    sosService.setActivationType('button');
     sosService.activate();
     toast.success('SOS activated!');
     navigate('/sos-activated');

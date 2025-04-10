@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -133,7 +132,7 @@ const ImHerePage: React.FC = () => {
           showMarker={true}
           initialLocation={userLocation || undefined}
         />
-
+        
         {/* Contact Selector */}
         <div className="absolute top-4 left-4 right-4">
           <ContactSelector 

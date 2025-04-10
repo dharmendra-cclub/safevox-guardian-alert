@@ -27,4 +27,7 @@ export interface SOSHistoryEntry {
   location: Location | null;
   message: string;
   contactIds: string[];
+  triggerType?: 'button' | 'codeword' | 'crash' | 'timer';
+  codewordUsed?: string | null;
+  audioUrl?: string;
 }
