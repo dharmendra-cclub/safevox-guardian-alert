@@ -22,10 +22,19 @@ class ContactsService {
       if (error) throw error;
       
       // Transform the data to make sure it has all required properties
-      const contacts = data?.map(contact => ({
-        ...contact,
-        relationship: contact.relationship || '' // Add relationship if missing
-      })) || [];
+      // Safely add the relationship property even if it doesn't exist in the database
+      const contacts = data?.map(contact => {
+        return {
+          ...contact,
+          relationship: '', // Default empty relationship since it's optional in our type
+          // Make sure all required properties exist
+          id: contact.id,
+          user_id: contact.user_id,
+          name: contact.name,
+          phone: contact.phone,
+          created_at: contact.created_at
+        } as EmergencyContact;
+      }) || [];
       
       this.emergencyContacts = contacts;
       return contacts;
