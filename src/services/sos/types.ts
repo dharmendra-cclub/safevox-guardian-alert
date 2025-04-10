@@ -1,4 +1,3 @@
-
 // Types for SOS service
 
 // Location type
@@ -20,14 +19,18 @@ export interface EmergencyContact {
   [key: string]: any;
 }
 
-// SOS history entry
+// SOS history entry type
 export interface SOSHistoryEntry {
-  userId: string;
+  id?: string;
+  user_id: string;
   timestamp: string;
-  location: Location | null;
+  location: {
+    lat: number;
+    lng: number;
+  } | null;
   message: string;
-  contactIds: string[];
-  triggerType?: 'button' | 'codeword' | 'crash' | 'timer';
-  codewordUsed?: string | null;
-  audioUrl?: string;
+  contact_ids: string[];
+  trigger_type?: 'button' | 'codeword' | 'crash' | 'timer';
+  codeword_used?: string | null;
+  audio_url?: string | null;
 }

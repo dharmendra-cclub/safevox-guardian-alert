@@ -230,20 +230,19 @@ class VoiceRecognitionService {
         .from('voice_activations')
         .select('*')
         .eq('user_id', this.userId)
-        .eq('word', keyword);
+        .eq('code_word', keyword)
+        .maybeSingle();
       
       if (error) throw error;
       
-      const matchingActivation = data[0];
-      
-      if (matchingActivation) {
-        console.log(`Detected codeword: ${keyword}`, matchingActivation);
+      if (data) {
+        console.log(`Detected codeword: ${keyword}`, data);
         
         sosService.setActivationType('codeword', keyword);
         
-        let contactIds = matchingActivation.contacts || [];
+        const contactIds = data.contacts || [];
         
-        sosService.activate(matchingActivation.message, contactIds.length > 0 ? contactIds : undefined);
+        sosService.activate(data.message, contactIds.length > 0 ? contactIds : undefined);
         
         window.location.href = '/sos-activated';
       }

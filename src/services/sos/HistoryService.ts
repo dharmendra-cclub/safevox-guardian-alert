@@ -20,34 +20,19 @@ class HistoryService {
     
     try {
       const historyEntry: SOSHistoryEntry = {
-        userId: this.userId,
+        user_id: this.userId,
         timestamp: new Date().toISOString(),
-        location,
+        location: location,
         message,
-        contactIds,
-        triggerType,
-        codewordUsed,
-        audioUrl: `https://safevox.io/recordings/${this.userId}/${new Date().getTime()}.mp3` // Sample URL
+        contact_ids: contactIds,
+        trigger_type: triggerType,
+        codeword_used: codewordUsed,
+        audio_url: `https://safevox.io/recordings/${this.userId}/${new Date().getTime()}.mp3`
       };
       
-      console.log('Saving SOS history:', historyEntry);
-      // In a real app, this would be saved to Supabase
-      
-      // Mock saving to the database
       const { error } = await supabase
         .from('sos_history')
-        .insert({
-          user_id: this.userId,
-          timestamp: historyEntry.timestamp,
-          location: historyEntry.location,
-          message: historyEntry.message,
-          contact_ids: historyEntry.contactIds,
-          trigger_type: historyEntry.triggerType,
-          codeword_used: historyEntry.codewordUsed,
-          audio_url: historyEntry.audioUrl
-        })
-        .select()
-        .maybeSingle();
+        .insert(historyEntry);
       
       if (error) {
         console.error('Error inserting history to database:', error);
@@ -61,40 +46,15 @@ class HistoryService {
     if (!this.userId) return [];
     
     try {
-      // In a real app, fetch from database
-      // For now, return mock data
-      const mockHistory: SOSHistoryEntry[] = [
-        {
-          userId: this.userId,
-          timestamp: new Date().toISOString(),
-          location: { lat: 17.3850, lng: 78.4867 },
-          message: 'Emergency! I need help!',
-          contactIds: ['1', '2', '3'],
-          triggerType: 'button',
-          audioUrl: `https://safevox.io/recordings/${this.userId}/sample1.mp3`
-        },
-        {
-          userId: this.userId,
-          timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-          location: { lat: 17.3880, lng: 78.4850 },
-          message: 'Help me now!',
-          contactIds: ['1', '2'],
-          triggerType: 'codeword',
-          codewordUsed: 'police',
-          audioUrl: `https://safevox.io/recordings/${this.userId}/sample2.mp3`
-        },
-        {
-          userId: this.userId,
-          timestamp: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-          location: { lat: 17.3820, lng: 78.4890 },
-          message: 'Accident detected! Need immediate help!',
-          contactIds: ['1'],
-          triggerType: 'crash',
-          audioUrl: `https://safevox.io/recordings/${this.userId}/sample3.mp3`
-        }
-      ];
+      const { data, error } = await supabase
+        .from('sos_history')
+        .select('*')
+        .eq('user_id', this.userId)
+        .order('timestamp', { ascending: false });
       
-      return mockHistory;
+      if (error) throw error;
+      
+      return data || [];
     } catch (error) {
       console.error('Error fetching SOS history:', error);
       return [];
