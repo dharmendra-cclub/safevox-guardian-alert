@@ -46,6 +46,7 @@ const ImHerePage: React.FC = () => {
   const fetchContacts = async () => {
     setLoading(true);
     const data = await sosService.fetchEmergencyContacts();
+    // Convert EmergencyContact[] to Contact[] with selected property
     setContacts(
       data.map(contact => ({
         ...contact,

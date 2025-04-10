@@ -13,8 +13,10 @@ export interface EmergencyContact {
   user_id: string;
   name: string;
   phone: string;
-  relationship: string;
+  initials?: string;
+  updated_at?: string;
   created_at: string;
+  relationship?: string;
   [key: string]: any;
 }
 

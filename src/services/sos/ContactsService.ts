@@ -20,8 +20,15 @@ class ContactsService {
         .eq('user_id', this.userId);
       
       if (error) throw error;
-      this.emergencyContacts = data || [];
-      return data;
+      
+      // Transform the data to make sure it has all required properties
+      const contacts = data?.map(contact => ({
+        ...contact,
+        relationship: contact.relationship || '' // Add relationship if missing
+      })) || [];
+      
+      this.emergencyContacts = contacts;
+      return contacts;
     } catch (error) {
       console.error('Error fetching emergency contacts:', error);
       return [];

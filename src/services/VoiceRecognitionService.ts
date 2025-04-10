@@ -1,7 +1,7 @@
 
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { sosService } from './SOSService';
+import { sosService } from './sos';
 import { CodeWord } from '@/types/voice-activation';
 
 // Define SpeechRecognition interface

@@ -1,11 +1,9 @@
 
 import { Database } from '@/integrations/supabase/types';
-
-// Base contact type from database
-type DbContact = Database['public']['Tables']['emergency_contacts']['Row'];
+import { EmergencyContact } from '@/services/sos/types';
 
 // Enhanced contact type with UI selection state
-export interface Contact extends DbContact {
+export interface Contact extends EmergencyContact {
   selected?: boolean;
 }
 
