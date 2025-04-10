@@ -6,7 +6,7 @@ import { Phone, AlertTriangle, FireExtinguisher, AmbulanceIcon } from 'lucide-re
 import { toast } from 'sonner';
 import MapView from '@/components/map/MapView';
 import { useAuth } from '@/hooks/useAuth';
-import { sosService } from '@/services/SOSService';
+import { sosService } from '@/services/sos';
 import { audioRecordingService } from '@/services/AudioRecordingService';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 

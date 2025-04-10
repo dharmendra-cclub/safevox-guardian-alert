@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import MapView from '@/components/map/MapView';
 import SOSButton from '@/components/SOSButton';
 import BottomNavBar from '@/components/BottomNavBar';
-import { sosService } from '@/services/SOSService';
+import { sosService } from '@/services/sos';
 import { toast } from 'sonner';
 
 const Drive: React.FC = () => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
@@ -9,7 +10,7 @@ import BottomNavBar from '@/components/BottomNavBar';
 import SideBarMenu from '@/components/SideBarMenu';
 import Logo from '@/components/Logo';
 import { useAuth } from '@/hooks/useAuth';
-import { sosService } from '@/services/SOSService';
+import { sosService } from '@/services/sos';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { voiceRecognitionService } from '@/services/VoiceRecognitionService';
 import { supabase } from '@/integrations/supabase/client';
