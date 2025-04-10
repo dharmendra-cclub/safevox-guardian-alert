@@ -1,5 +1,6 @@
 
 // Types for SOS service
+import { Json } from "@/integrations/supabase/types";
 
 // Location type
 export interface Location {

@@ -19,10 +19,11 @@ class HistoryService {
     if (!this.userId) return;
     
     try {
+      // Convert Location to a simple object that can be stored as JSON
       const historyEntry = {
         user_id: this.userId,
         timestamp: new Date().toISOString(),
-        location: location,
+        location: location ? { ...location } : null, // Spread to create a plain object
         message,
         contact_ids: contactIds,
         trigger_type: triggerType,
