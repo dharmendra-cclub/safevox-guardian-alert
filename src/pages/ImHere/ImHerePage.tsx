@@ -1,18 +1,18 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MapView from '@/components/map/MapView';
 import BottomNavBar from '@/components/BottomNavBar';
+import ContactSelector from './components/ContactSelector';
+import LocationShareButton from './components/LocationShareButton';
+import ShareLinkButton from './components/ShareLinkButton';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { contactsService } from '@/services/sos';
 import { Contact } from './types';
 import SOSButton from '@/components/SOSButton';
 import { sosService } from '@/services/sos';
-import ShareLinkButton from './components/ShareLinkButton';
-import LocationShareButton from './components/LocationShareButton';
 
 const ImHerePage: React.FC = () => {
   const navigate = useNavigate();
@@ -110,35 +110,6 @@ const ImHerePage: React.FC = () => {
     navigate('/sos-activated');
   };
 
-  const handleShareLink = () => {
-    if (!userLocation) {
-      toast.error("Unable to get your current location");
-      return;
-    }
-
-    // Create a shareable link with the location
-    const locationUrl = `https://maps.google.com/?q=${userLocation.lat},${userLocation.lng}`;
-    
-    // Use the Web Share API if available
-    if (navigator.share) {
-      navigator.share({
-        title: 'My Location',
-        text: 'Here is my current location',
-        url: locationUrl
-      }).catch(error => {
-        console.error('Error sharing:', error);
-        
-        // Fallback - copy to clipboard
-        navigator.clipboard.writeText(locationUrl);
-        toast.success('Location link copied to clipboard');
-      });
-    } else {
-      // Fallback for browsers that don't support Web Share API
-      navigator.clipboard.writeText(locationUrl);
-      toast.success('Location link copied to clipboard');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -162,6 +133,15 @@ const ImHerePage: React.FC = () => {
           initialLocation={userLocation || undefined}
         />
         
+        {/* Contact Selector */}
+        <div className="absolute top-4 left-4 right-4">
+          <ContactSelector 
+            contacts={contacts} 
+            loading={loading} 
+            toggleContactSelection={toggleContactSelection} 
+          />
+        </div>
+        
         {/* Action Buttons */}
         <div className="absolute bottom-24 left-4 right-4 space-y-2">
           <LocationShareButton 
@@ -171,12 +151,9 @@ const ImHerePage: React.FC = () => {
             contactsCount={contacts.filter(c => c.selected).length}
           />
           
-          <Button
-            className="w-full bg-secondary hover:bg-secondary/90"
-            onClick={handleShareLink}
-          >
-            Share Location Link
-          </Button>
+          <ShareLinkButton 
+            userLocation={userLocation}
+          />
         </div>
         
         <SOSButton onClick={handleSOSPress} />

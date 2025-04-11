@@ -1,22 +1,30 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Volume2, Phone } from 'lucide-react';
+import { ArrowLeft, Volume2, Share2, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import MapView from '@/components/map/MapView';
 import SOSButton from '@/components/SOSButton';
 import BottomNavBar from '@/components/BottomNavBar';
 import { sosService } from '@/services/sos';
+import { contactsService } from '@/services/sos/ContactsService';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Drive: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [volume, setVolume] = useState([70]);
   const [isDriving, setIsDriving] = useState(true);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [contacts, setContacts] = useState<{ id: string; name: string; phone: string; selected: boolean }[]>([]);
+  const [isSending, setIsSending] = useState(false);
 
   // Auto-enable driving mode and get location
   useEffect(() => {
@@ -44,6 +52,7 @@ const Drive: React.FC = () => {
     // Load contacts if the user is logged in
     if (user) {
       sosService.setUserId(user.id);
+      loadContacts();
     }
 
     return () => {
@@ -51,6 +60,20 @@ const Drive: React.FC = () => {
       stopAccidentDetection();
     };
   }, [user]);
+
+  const loadContacts = async () => {
+    try {
+      const emergencyContacts = await contactsService.fetchEmergencyContacts();
+      setContacts(emergencyContacts.map(contact => ({
+        id: contact.id,
+        name: contact.name,
+        phone: contact.phone,
+        selected: false
+      })));
+    } catch (error) {
+      console.error("Error loading contacts:", error);
+    }
+  };
 
   const startAccidentDetection = () => {
     console.log('Started accident detection simulation');
@@ -76,6 +99,84 @@ const Drive: React.FC = () => {
       setIsDriving(true);
       startAccidentDetection();
       toast.success('Driving mode activated');
+    }
+  };
+
+  const handleShareLocation = () => {
+    setIsContactModalOpen(true);
+  };
+
+  const toggleContact = (id: string) => {
+    setContacts(contacts.map(contact => 
+      contact.id === id ? { ...contact, selected: !contact.selected } : contact
+    ));
+  };
+
+  const handleSendLocation = async () => {
+    const selectedContacts = contacts.filter(c => c.selected);
+    if (selectedContacts.length === 0) {
+      toast.error("Please select at least one contact");
+      return;
+    }
+
+    setIsSending(true);
+    
+    try {
+      // Generate location URL
+      const locationUrl = userLocation 
+        ? `https://maps.google.com/?q=${userLocation.lat},${userLocation.lng}` 
+        : '';
+      
+      // Create message text
+      const message = `I'm sharing my current location with you: ${locationUrl}`;
+      
+      // In a real app, this would send SMS, for now just simulate
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Log what would happen in a real app
+      console.log("Sending location via SMS to:", selectedContacts);
+      console.log("Message:", message);
+      
+      // Add to history
+      const contactIds = selectedContacts.map(c => c.id);
+      await sosService.addLocationShareToHistory(userLocation, contactIds);
+      
+      toast.success(`Location sent to ${selectedContacts.length} contacts`);
+      setIsContactModalOpen(false);
+    } catch (error) {
+      console.error("Error sending location:", error);
+      toast.error("Failed to send location");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleShareLink = () => {
+    if (!userLocation) {
+      toast.error("Unable to get your current location");
+      return;
+    }
+
+    // Create a shareable link with the location
+    const locationUrl = `https://maps.google.com/?q=${userLocation.lat},${userLocation.lng}`;
+    
+    // Use the Web Share API if available
+    if (navigator.share) {
+      navigator.share({
+        title: 'My Location',
+        text: 'Here is my current location',
+        url: locationUrl
+      }).catch(error => {
+        console.error('Error sharing:', error);
+        
+        // Fallback - copy to clipboard
+        navigator.clipboard.writeText(locationUrl);
+        toast.success('Location link copied to clipboard');
+      });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(locationUrl);
+      toast.success('Location link copied to clipboard');
     }
   };
 
@@ -114,6 +215,25 @@ const Drive: React.FC = () => {
           />
         </div>
         
+        {/* Location Sharing Buttons */}
+        <div className="absolute top-20 left-4 right-4 grid grid-cols-2 gap-2 z-10">
+          <Button 
+            className="bg-primary hover:bg-primary/90 flex items-center justify-center"
+            onClick={handleShareLocation}
+          >
+            <Phone className="mr-2 h-4 w-4" />
+            Send My Location via SMS
+          </Button>
+          
+          <Button 
+            className="bg-secondary hover:bg-secondary/90 flex items-center justify-center"
+            onClick={handleShareLink}
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            Share Link
+          </Button>
+        </div>
+        
         {/* Drive Status - Move upward to avoid overlap with SOS button */}
         <div className="absolute bottom-32 left-0 right-0 bg-card/80 backdrop-blur-sm p-3 z-10">
           <p className="text-center text-sm mb-2">
@@ -132,6 +252,48 @@ const Drive: React.FC = () => {
         {/* SOS Button */}
         <SOSButton onClick={handleSOSPress} />
       </div>
+
+      {/* Contact Selection Modal */}
+      <Dialog open={isContactModalOpen} onOpenChange={setIsContactModalOpen}>
+        <DialogContent className="max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle>Select contacts to share location with</DialogTitle>
+          </DialogHeader>
+          
+          <div className={`${contacts.length > 5 ? 'max-h-60 overflow-y-auto' : ''} py-2`}>
+            {contacts.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                No emergency contacts found. Add contacts in the Emergency Contacts section.
+              </p>
+            ) : (
+              contacts.map(contact => (
+                <div key={contact.id} className="flex items-center space-x-3 py-2">
+                  <Checkbox 
+                    checked={contact.selected} 
+                    onCheckedChange={() => toggleContact(contact.id)}
+                  />
+                  <div>
+                    <p className="font-medium">{contact.name}</p>
+                    <p className="text-sm text-muted-foreground">{contact.phone}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button variant="outline" onClick={() => setIsContactModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendLocation} 
+              disabled={isSending || contacts.filter(c => c.selected).length === 0}
+            >
+              {isSending ? "Sending..." : "Send Location"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Bottom Navigation */}
       <BottomNavBar />
