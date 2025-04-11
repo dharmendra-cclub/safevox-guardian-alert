@@ -1,141 +1,158 @@
-
-import { useRef, useState, useEffect } from 'react';
-import { loadGoogleMapsScript, cleanupGoogleMapsScript } from '../utils/mapLoader';
-import useLocation from './useLocation';
-import { MapHookProps } from '../types';
+import { useEffect, useRef, useState } from 'react';
+import { loadGoogleMapsApi } from '../utils/googleMapsLoader';
+import { DARK_MODE_STYLES } from '../constants/mapStyles';
 import { useMap } from '../context/MapContext';
 
-export default function useMapInitialization({
-  satelliteView,
-  showMarker,
+// Default map center (San Francisco)
+const DEFAULT_CENTER = { lat: 37.7749, lng: -122.4194 };
+const DEFAULT_ZOOM = 14;
+
+interface MapViewInitProps {
+  satelliteView?: boolean;
+  showMarker?: boolean;
+  initialLocation?: { lat: number; lng: number };
+}
+
+const useMapInitialization = ({
+  satelliteView = false, 
+  showMarker = true,
   initialLocation
-}: MapHookProps) {
+}: MapViewInitProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
-  const [markerInstance, setMarkerInstance] = useState<google.maps.Marker | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const { setMap, setUserLocation, userLocation, setIsLoadingLocation } = useMap();
   
-  // Get location from context or initialLocation
-  const { userLocation, locationError, isLoadingLocation } = useLocation(
-    initialLocation,
-    showMarker
-  );
-  
-  // Get map loaded state from context
-  const { mapLoaded, setMapLoaded } = useMap();
-
-  // Initialize map when we have a location
   useEffect(() => {
-    if (!userLocation) {
-      // Wait for location before initializing map
-      return;
-    }
+    let map: google.maps.Map | null = null;
+    let userMarker: google.maps.Marker | null = null;
     
-    setIsLoading(true);
-    
-    const initMap = () => {
-      if (!mapRef.current) {
-        console.error("Map container ref not available");
-        setIsLoading(false);
-        return;
-      }
-
+    const initMap = async () => {
+      if (!mapRef.current) return;
+      
       try {
-        // Use the available location, which is either initialLocation or userLocation from context
-        const location = userLocation;
+        setIsLoading(true);
         
-        if (!location) {
-          console.log("No location available yet, waiting...");
-          return;
-        }
+        // Load Google Maps API
+        await loadGoogleMapsApi();
         
-        console.log("Initializing map with location:", location);
-
-        // Check if map container has dimensions
-        const mapContainer = mapRef.current;
-        if (mapContainer.clientHeight === 0 || mapContainer.clientWidth === 0) {
-          console.error("Map container has zero width or height:", 
-            mapContainer.clientWidth, mapContainer.clientHeight);
-        }
-
+        // Initial map setup
         const mapOptions: google.maps.MapOptions = {
-          center: location,
-          zoom: 15,
+          center: initialLocation || DEFAULT_CENTER,
+          zoom: DEFAULT_ZOOM,
           mapTypeId: satelliteView ? 'satellite' : 'roadmap',
-          zoomControl: true,
-          mapTypeControl: false,
           streetViewControl: false,
-          fullscreenControl: false
+          mapTypeControl: false,
+          fullscreenControl: false,
+          gestureHandling: 'greedy', // This enables scrolling without Ctrl key
+          zoomControl: true,
+          styles: DARK_MODE_STYLES
         };
-
-        const map = new google.maps.Map(mapRef.current, mapOptions);
-        setMapInstance(map);
-        console.log("Map instance created successfully");
-
-        // Add marker if needed
-        if (showMarker && location) {
-          const marker = new google.maps.Marker({
-            position: location,
-            map: map,
-            animation: google.maps.Animation.DROP,
-            title: 'Your Location'
+        
+        map = new google.maps.Map(mapRef.current, mapOptions);
+        setMap(map);
+        
+        // Create marker for user's location if not provided initially
+        if (showMarker) {
+          const position = initialLocation || userLocation || DEFAULT_CENTER;
+          
+          userMarker = new google.maps.Marker({
+            position,
+            map,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 10,
+              fillColor: '#4285F4',
+              fillOpacity: 1,
+              strokeColor: '#FFF',
+              strokeWeight: 2
+            },
+            animation: google.maps.Animation.DROP
           });
-          setMarkerInstance(marker);
-          console.log("Marker added to map");
         }
         
-        // Set loading to false once the map is initialized
-        map.addListener('tilesloaded', () => {
-          setIsLoading(false);
-          setMapLoaded(true);
-        });
+        // If initial location is provided, use it
+        if (initialLocation) {
+          if (map) {
+            map.setCenter(initialLocation);
+            if (userMarker) {
+              userMarker.setPosition(initialLocation);
+            }
+          }
+        } 
+        // Otherwise try to get user's current position
+        else if (!userLocation) {
+          handleGetLocation();
+        }
       } catch (error) {
         console.error('Error initializing map:', error);
+        setLocationError('Failed to load map. Please try again later.');
+      } finally {
         setIsLoading(false);
       }
     };
-
-    // Only load the script if we have a location
-    if (userLocation) {
-      console.log("Location available, attempting to load Google Maps script");
-      loadGoogleMapsScript(initMap);
-    } else {
-      console.log("No location available yet, waiting...");
-    }
-
+    
+    const handleGetLocation = () => {
+      setIsLoadingLocation(true);
+      
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const newLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            
+            setUserLocation(newLocation);
+            
+            if (map) {
+              map.setCenter(newLocation);
+              if (userMarker) {
+                userMarker.setPosition(newLocation);
+              }
+            }
+            
+            setIsLoadingLocation(false);
+            setLocationError(null);
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            let errorMessage = 'Unable to get your location.';
+            
+            if (error.code === 1) {
+              errorMessage = 'Location access denied. Please enable location services.';
+            } else if (error.code === 2) {
+              errorMessage = 'Location unavailable. Please try again later.';
+            } else if (error.code === 3) {
+              errorMessage = 'Location request timed out. Please try again.';
+            }
+            
+            setLocationError(errorMessage);
+            setIsLoadingLocation(false);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        setLocationError('Geolocation is not supported by your browser.');
+        setIsLoadingLocation(false);
+      }
+    };
+    
+    initMap();
+    
     // Cleanup
     return () => {
-      cleanupGoogleMapsScript();
-    };
-  }, [satelliteView, showMarker, initialLocation, userLocation, setMapLoaded]);
-
-  // Update map type if satelliteView prop changes
-  useEffect(() => {
-    if (mapInstance) {
-      console.log("Updating map type:", satelliteView ? 'satellite' : 'roadmap');
-      mapInstance.setMapTypeId(satelliteView ? 'satellite' : 'roadmap');
-    }
-  }, [satelliteView, mapInstance]);
-
-  // Update marker position if location changes
-  useEffect(() => {
-    const locationToUse = userLocation;
-    
-    if (markerInstance && locationToUse) {
-      console.log("Updating marker position:", locationToUse);
-      markerInstance.setPosition(locationToUse);
-      
-      if (mapInstance) {
-        mapInstance.panTo(locationToUse);
+      if (map) {
+        setMap(null);
       }
-    }
-  }, [initialLocation, userLocation, markerInstance, mapInstance]);
+    };
+  }, [initialLocation, satelliteView, showMarker, setMap, userLocation, setUserLocation]);
+  
+  return { mapRef, isLoading, locationError };
+};
 
-  return {
-    mapRef,
-    mapInstance,
-    markerInstance,
-    locationError,
-    isLoading: isLoading || isLoadingLocation
-  };
-}
+export default useMapInitialization;

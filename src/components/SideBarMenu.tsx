@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Home, AlertCircle, User, Bell, MessageCircle, Settings, 
-  HelpCircle, TimerOff, Phone, Clock, LogOut
+  HelpCircle, TimerOff, Phone, Clock, LogOut, FileVideo, Car
 } from 'lucide-react';
 
 interface SideBarProps {
@@ -69,9 +69,9 @@ const SideBarMenu: React.FC<SideBarProps> = ({ isOpen, onClose, onOpenChange }) 
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="bg-background p-0 w-[250px]" onInteractOutside={onClose}>
+      <SheetContent side="left" className="bg-background p-0 w-[280px]" onInteractOutside={onClose}>
         <ScrollArea className="h-full">
-          <div className="flex flex-col p-4 space-y-4">
+          <div className="flex flex-col p-6 space-y-4">
             {/* User Profile */}
             <div className="flex items-center space-x-3 mb-6">
               <Avatar className="h-12 w-12 border-2 border-primary">
@@ -83,11 +83,16 @@ const SideBarMenu: React.FC<SideBarProps> = ({ isOpen, onClose, onOpenChange }) 
                   </AvatarFallback>
                 )}
               </Avatar>
-              <div>
-                <h3 className="font-medium">{fullName}</h3>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <div className="overflow-hidden">
+                <h3 className="font-medium truncate">{fullName}</h3>
+                <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
               </div>
             </div>
+
+            <Link to="/profile" className="sidebar-item" onClick={onClose}>
+              <User size={18} />
+              <span>View Profile</span>
+            </Link>
 
             {/* Navigation Items */}
             <nav className="space-y-1">
@@ -108,7 +113,7 @@ const SideBarMenu: React.FC<SideBarProps> = ({ isOpen, onClose, onOpenChange }) 
 
               <Link to="/voice-activation" className="sidebar-item" onClick={onClose}>
                 <MessageCircle size={18} />
-                <span>Voice Codewords</span>
+                <span>Voice Activation</span>
               </Link>
               
               <Link to="/timer" className="sidebar-item" onClick={onClose}>
@@ -116,9 +121,14 @@ const SideBarMenu: React.FC<SideBarProps> = ({ isOpen, onClose, onOpenChange }) 
                 <span>Safety Timer</span>
               </Link>
 
-              <Link to="/profile" className="sidebar-item" onClick={onClose}>
-                <User size={18} />
-                <span>My Profile</span>
+              <Link to="/recordings" className="sidebar-item" onClick={onClose}>
+                <FileVideo size={18} />
+                <span>Recordings</span>
+              </Link>
+
+              <Link to="/drive" className="sidebar-item" onClick={onClose}>
+                <Car size={18} />
+                <span>Drive</span>
               </Link>
 
               <Link to="/settings" className="sidebar-item" onClick={onClose}>
