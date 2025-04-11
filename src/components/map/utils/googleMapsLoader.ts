@@ -38,10 +38,10 @@ export const loadGoogleMapsApi = (): Promise<void> => {
     // Mark as loading
     window[GOOGLE_MAPS_LOADED_KEY] = true;
     
-    // Create and append the script
+    // Create and append the script with loading=async attribute
     const script = document.createElement('script');
     script.id = SCRIPT_ID;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`;
     script.async = true;
     script.defer = true;
 

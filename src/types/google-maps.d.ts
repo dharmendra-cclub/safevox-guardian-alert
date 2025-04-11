@@ -13,6 +13,23 @@ declare namespace google.maps {
     setPosition(latLng: LatLng | LatLngLiteral): void;
   }
 
+  namespace marker {
+    class AdvancedMarkerElement {
+      constructor(opts?: AdvancedMarkerElementOptions);
+      position: LatLng | LatLngLiteral | null;
+      map: Map | null;
+      title: string | null;
+      content: HTMLElement | null;
+    }
+
+    interface AdvancedMarkerElementOptions {
+      position?: LatLng | LatLngLiteral;
+      map?: Map;
+      title?: string;
+      content?: HTMLElement;
+    }
+  }
+
   interface MapOptions {
     center?: LatLng | LatLngLiteral;
     zoom?: number;

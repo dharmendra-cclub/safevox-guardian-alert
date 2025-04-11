@@ -31,7 +31,7 @@ const useMapInitialization = ({
   } = useMap();
   
   useEffect(() => {
-    let userMarker: google.maps.Marker | null = null;
+    let userMarker: google.maps.marker.AdvancedMarkerElement | null = null;
     
     const initMap = async () => {
       if (!mapRef.current) return;
@@ -50,7 +50,7 @@ const useMapInitialization = ({
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: false,
-          gestureHandling: 'cooperative', // Changed to 'cooperative' to enable scrolling without Ctrl
+          gestureHandling: 'cooperative', // 'cooperative' enables scrolling without Ctrl
           zoomControl: true,
           styles: DARK_MODE_STYLES
         };
@@ -58,22 +58,25 @@ const useMapInitialization = ({
         const googleMap = new google.maps.Map(mapRef.current, mapOptions);
         setMap(googleMap);
         
-        // Create marker for user's location if not provided initially
+        // Create marker for user's location if needed
         if (showMarker) {
           const position = initialLocation || userLocation || DEFAULT_CENTER;
           
-          userMarker = new google.maps.Marker({
+          // Create a simple dot element for the marker
+          const dot = document.createElement('div');
+          dot.className = 'map-marker-dot';
+          dot.style.width = '20px';
+          dot.style.height = '20px';
+          dot.style.borderRadius = '50%';
+          dot.style.backgroundColor = '#4285F4';
+          dot.style.border = '2px solid white';
+          
+          // Use the new AdvancedMarkerElement instead of Marker
+          userMarker = new google.maps.marker.AdvancedMarkerElement({
             position,
             map: googleMap,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 10,
-              fillColor: '#4285F4',
-              fillOpacity: 1,
-              strokeColor: '#FFF',
-              strokeWeight: 2
-            },
-            animation: google.maps.Animation.DROP
+            content: dot,
+            title: 'Your location'
           });
         }
         
@@ -82,7 +85,7 @@ const useMapInitialization = ({
           if (googleMap) {
             googleMap.setCenter(initialLocation);
             if (userMarker) {
-              userMarker.setPosition(initialLocation);
+              userMarker.position = initialLocation;
             }
           }
         } 
@@ -98,7 +101,10 @@ const useMapInitialization = ({
       }
     };
     
-    const handleGetLocation = (googleMap: google.maps.Map | null, marker: google.maps.Marker | null) => {
+    const handleGetLocation = (
+      googleMap: google.maps.Map | null,
+      marker: google.maps.marker.AdvancedMarkerElement | null
+    ) => {
       setIsLoadingLocation(true);
       
       if (navigator.geolocation) {
@@ -114,7 +120,7 @@ const useMapInitialization = ({
             if (googleMap) {
               googleMap.setCenter(newLocation);
               if (marker) {
-                marker.setPosition(newLocation);
+                marker.position = newLocation;
               }
             }
             

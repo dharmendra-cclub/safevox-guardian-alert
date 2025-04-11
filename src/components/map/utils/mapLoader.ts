@@ -45,7 +45,7 @@ export const loadGoogleMapsScript = (initMapCallback: () => void) => {
   // Create and append the script
   const script = document.createElement('script');
   script.id = SCRIPT_ID;
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMap`;
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMap&loading=async`;
   script.async = true;
   script.defer = true;
 
