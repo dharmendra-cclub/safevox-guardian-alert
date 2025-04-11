@@ -8,11 +8,7 @@ interface MapContextType {
   locationError: string | null;
   isLoadingLocation: boolean;
   mapLoaded: boolean;
-  map: google.maps.Map | null;
   setMapLoaded: (loaded: boolean) => void;
-  setMap: (map: google.maps.Map | null) => void;
-  setUserLocation: (location: LocationState | null) => void;
-  setIsLoadingLocation: (isLoading: boolean) => void;
 }
 
 const MapContext = createContext<MapContextType | undefined>(undefined);
@@ -22,7 +18,6 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
 
   // Get user's location once when the app starts
   useEffect(() => {
@@ -113,11 +108,7 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
       locationError, 
       isLoadingLocation,
       mapLoaded,
-      map,
-      setMapLoaded,
-      setMap,
-      setUserLocation,
-      setIsLoadingLocation
+      setMapLoaded
     }}>
       {children}
     </MapContext.Provider>

@@ -83,7 +83,7 @@ const SideBarMenu: React.FC<SideBarProps> = ({ isOpen, onClose, onOpenChange }) 
                   </AvatarFallback>
                 )}
               </Avatar>
-              <div className="overflow-hidden pl-1">
+              <div className="overflow-hidden">
                 <h3 className="font-medium truncate">{fullName}</h3>
                 <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
               </div>

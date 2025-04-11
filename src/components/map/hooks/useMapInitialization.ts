@@ -21,17 +21,11 @@ const useMapInitialization = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const { 
-    setMap, 
-    map, 
-    setUserLocation, 
-    userLocation, 
-    setIsLoadingLocation 
-  } = useMap();
+  const { setMap, setUserLocation, userLocation, setIsLoadingLocation } = useMap();
   
   useEffect(() => {
-    let userMarker: google.maps.marker.AdvancedMarkerElement | null = null;
-    let googleMap: google.maps.Map | null = null;
+    let map: google.maps.Map | null = null;
+    let userMarker: google.maps.Marker | null = null;
     
     const initMap = async () => {
       if (!mapRef.current) return;
@@ -42,74 +36,53 @@ const useMapInitialization = ({
         // Load Google Maps API
         await loadGoogleMapsApi();
         
-        // Double check that Google Maps is definitely loaded
-        if (!window.google || !window.google.maps || !window.google.maps.Map) {
-          console.error('Google Maps API not properly loaded');
-          throw new Error('Google Maps API not properly loaded');
-        }
-        
-        console.log('Initializing map with Google Maps API');
-        
         // Initial map setup
         const mapOptions: google.maps.MapOptions = {
-          center: initialLocation || userLocation || DEFAULT_CENTER,
+          center: initialLocation || DEFAULT_CENTER,
           zoom: DEFAULT_ZOOM,
           mapTypeId: satelliteView ? 'satellite' : 'roadmap',
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: false,
-          gestureHandling: 'cooperative', // 'cooperative' enables scrolling without Ctrl
+          gestureHandling: 'greedy', // This enables scrolling without Ctrl key
           zoomControl: true,
           styles: DARK_MODE_STYLES
         };
         
-        try {
-          googleMap = new window.google.maps.Map(mapRef.current, mapOptions);
-          setMap(googleMap);
+        map = new google.maps.Map(mapRef.current, mapOptions);
+        setMap(map);
+        
+        // Create marker for user's location if not provided initially
+        if (showMarker) {
+          const position = initialLocation || userLocation || DEFAULT_CENTER;
           
-          // Create marker for user's location if needed
-          if (showMarker && googleMap) {
-            const position = initialLocation || userLocation || DEFAULT_CENTER;
-            
-            // Create a simple dot element for the marker
-            const dot = document.createElement('div');
-            dot.className = 'map-marker-dot';
-            dot.style.width = '20px';
-            dot.style.height = '20px';
-            dot.style.borderRadius = '50%';
-            dot.style.backgroundColor = '#4285F4';
-            dot.style.border = '2px solid white';
-            
-            // Use the new AdvancedMarkerElement if available
-            if (window.google.maps.marker && window.google.maps.marker.AdvancedMarkerElement) {
-              userMarker = new window.google.maps.marker.AdvancedMarkerElement({
-                position,
-                map: googleMap,
-                content: dot,
-                title: 'Your location'
-              });
-            } else {
-              // Fallback to regular marker if Advanced Marker is not available
-              const standardMarker = new window.google.maps.Marker({
-                position,
-                map: googleMap,
-                title: 'Your location'
-              });
-              console.warn('Advanced Marker not available, using standard marker');
+          userMarker = new google.maps.Marker({
+            position,
+            map,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 10,
+              fillColor: '#4285F4',
+              fillOpacity: 1,
+              strokeColor: '#FFF',
+              strokeWeight: 2
+            },
+            animation: google.maps.Animation.DROP
+          });
+        }
+        
+        // If initial location is provided, use it
+        if (initialLocation) {
+          if (map) {
+            map.setCenter(initialLocation);
+            if (userMarker) {
+              userMarker.setPosition(initialLocation);
             }
           }
-          
-          // If initial location is provided, use it
-          if (initialLocation && googleMap) {
-            googleMap.setCenter(initialLocation);
-          } 
-          // Otherwise try to get user's current position
-          else if (!userLocation) {
-            handleGetLocation(googleMap, userMarker);
-          }
-        } catch (error) {
-          console.error('Error creating Google Maps instance:', error);
-          throw new Error('Failed to create Google Maps instance');
+        } 
+        // Otherwise try to get user's current position
+        else if (!userLocation) {
+          handleGetLocation();
         }
       } catch (error) {
         console.error('Error initializing map:', error);
@@ -119,10 +92,7 @@ const useMapInitialization = ({
       }
     };
     
-    const handleGetLocation = (
-      googleMap: google.maps.Map | null,
-      marker: google.maps.marker.AdvancedMarkerElement | null
-    ) => {
+    const handleGetLocation = () => {
       setIsLoadingLocation(true);
       
       if (navigator.geolocation) {
@@ -135,14 +105,10 @@ const useMapInitialization = ({
             
             setUserLocation(newLocation);
             
-            if (googleMap) {
-              try {
-                googleMap.setCenter(newLocation);
-                if (marker) {
-                  marker.position = newLocation;
-                }
-              } catch (error) {
-                console.error('Error updating map with location:', error);
+            if (map) {
+              map.setCenter(newLocation);
+              if (userMarker) {
+                userMarker.setPosition(newLocation);
               }
             }
             
@@ -166,7 +132,7 @@ const useMapInitialization = ({
           },
           {
             enableHighAccuracy: true,
-            timeout: 15000,
+            timeout: 10000,
             maximumAge: 0
           }
         );
@@ -176,7 +142,6 @@ const useMapInitialization = ({
       }
     };
     
-    // Initialize the map
     initMap();
     
     // Cleanup
@@ -185,7 +150,7 @@ const useMapInitialization = ({
         setMap(null);
       }
     };
-  }, [initialLocation, satelliteView, showMarker, setMap, map, userLocation, setUserLocation, setIsLoadingLocation]);
+  }, [initialLocation, satelliteView, showMarker, setMap, userLocation, setUserLocation]);
   
   return { mapRef, isLoading, locationError };
 };
