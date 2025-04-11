@@ -8,7 +8,7 @@ import { SCRIPT_ID, GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_LOADED_KEY } from './consta
 export const loadGoogleMapsApi = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     // If Google Maps API is already loaded, resolve immediately
-    if (window.google && window.google.maps) {
+    if (window.google && window.google.maps && window.google.maps.Map) {
       console.log("Google Maps API already loaded");
       resolve();
       return;
@@ -18,7 +18,7 @@ export const loadGoogleMapsApi = (): Promise<void> => {
     if (window[GOOGLE_MAPS_LOADED_KEY]) {
       console.log("Google Maps script is loading, waiting...");
       const checkInterval = setInterval(() => {
-        if (window.google && window.google.maps) {
+        if (window.google && window.google.maps && window.google.maps.Map) {
           clearInterval(checkInterval);
           console.log("Google Maps API loaded after waiting");
           resolve();
@@ -38,36 +38,30 @@ export const loadGoogleMapsApi = (): Promise<void> => {
     // Mark as loading
     window[GOOGLE_MAPS_LOADED_KEY] = true;
     
-    // Create and append the script with loading=async attribute
+    // Create script element for loading the Google Maps API
     const script = document.createElement('script');
     script.id = SCRIPT_ID;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
     script.async = true;
     script.defer = true;
 
     // Define the callback for when the script loads
     script.onload = () => {
       console.log("Google Maps API script loaded");
-      window[GOOGLE_MAPS_LOADED_KEY] = false;
       
-      // Ensure the API is actually available
-      if (window.google && window.google.maps) {
-        resolve();
-      } else {
-        const checkLoaded = setInterval(() => {
-          if (window.google && window.google.maps) {
-            clearInterval(checkLoaded);
-            console.log("Google Maps API confirmed loaded");
-            resolve();
-          }
-        }, 100);
-        
-        // Set a timeout in case it never loads
-        setTimeout(() => {
-          clearInterval(checkLoaded);
-          reject(new Error('Google Maps API failed to load after script loaded'));
-        }, 5000);
-      }
+      // Add a short delay to ensure API is fully initialized
+      setTimeout(() => {
+        // Verify API is actually available
+        if (window.google && window.google.maps && window.google.maps.Map) {
+          console.log("Google Maps API confirmed available");
+          window[GOOGLE_MAPS_LOADED_KEY] = false;
+          resolve();
+        } else {
+          console.error("Google Maps API not properly initialized after script load");
+          window[GOOGLE_MAPS_LOADED_KEY] = false;
+          reject(new Error('Google Maps API failed to initialize properly'));
+        }
+      }, 100);
     };
 
     // Handle errors

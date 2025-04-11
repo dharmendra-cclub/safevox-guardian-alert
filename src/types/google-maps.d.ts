@@ -6,6 +6,8 @@ declare namespace google.maps {
     setCenter(latLng: LatLng | LatLngLiteral): void;
     panTo(latLng: LatLng | LatLngLiteral): void;
     addListener(eventName: string, handler: Function): MapsEventListener;
+    getCenter(): LatLng;
+    getZoom(): number;
   }
 
   class Marker {
@@ -15,6 +17,7 @@ declare namespace google.maps {
     setTitle(title: string): void;
     setIcon(icon: string | Icon | Symbol): void;
     setAnimation(animation: Animation | null): void;
+    getPosition(): LatLng | null;
   }
 
   namespace marker {
@@ -94,6 +97,10 @@ declare namespace google.maps {
   interface LatLng {
     lat(): number;
     lng(): number;
+    equals(other: LatLng): boolean;
+    toString(): string;
+    toUrlValue(precision?: number): string;
+    toJSON(): LatLngLiteral;
   }
 
   interface LatLngLiteral {
@@ -109,6 +116,7 @@ declare namespace google.maps {
   namespace event {
     function addListener(instance: any, eventName: string, handler: Function): MapsEventListener;
     function removeListener(listener: MapsEventListener): void;
+    function clearInstanceListeners(instance: any): void;
   }
 
   interface MapsEventListener {

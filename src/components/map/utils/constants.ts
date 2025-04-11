@@ -11,7 +11,7 @@ export const GOOGLE_MAPS_LOADED_KEY = "googleMapsLoaded";
 // Geolocation options with increased timeouts for better reliability
 export const GEOLOCATION_OPTIONS = {
   enableHighAccuracy: true,
-  timeout: 15000,       // 15 seconds
+  timeout: 30000,       // 30 seconds (increased from 15s)
   maximumAge: 10000     // 10 seconds cache
 };
 
@@ -19,5 +19,5 @@ export const GEOLOCATION_OPTIONS = {
 export const WATCH_POSITION_OPTIONS = {
   enableHighAccuracy: true,
   maximumAge: 10000,    // 10 seconds
-  timeout: 15000        // 15 seconds
+  timeout: 30000        // 30 seconds (increased from 15s)
 };

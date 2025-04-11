@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { loadGoogleMapsApi } from '../utils/googleMapsLoader';
 import { DARK_MODE_STYLES } from '../constants/mapStyles';
@@ -32,6 +31,7 @@ const useMapInitialization = ({
   
   useEffect(() => {
     let userMarker: google.maps.marker.AdvancedMarkerElement | null = null;
+    let googleMap: google.maps.Map | null = null;
     
     const initMap = async () => {
       if (!mapRef.current) return;
@@ -52,7 +52,7 @@ const useMapInitialization = ({
         
         // Initial map setup
         const mapOptions: google.maps.MapOptions = {
-          center: initialLocation || DEFAULT_CENTER,
+          center: initialLocation || userLocation || DEFAULT_CENTER,
           zoom: DEFAULT_ZOOM,
           mapTypeId: satelliteView ? 'satellite' : 'roadmap',
           streetViewControl: false,
@@ -63,54 +63,53 @@ const useMapInitialization = ({
           styles: DARK_MODE_STYLES
         };
         
-        const googleMap = new window.google.maps.Map(mapRef.current, mapOptions);
-        setMap(googleMap);
-        
-        // Create marker for user's location if needed
-        if (showMarker && window.google.maps.marker) {
-          const position = initialLocation || userLocation || DEFAULT_CENTER;
+        try {
+          googleMap = new window.google.maps.Map(mapRef.current, mapOptions);
+          setMap(googleMap);
           
-          // Create a simple dot element for the marker
-          const dot = document.createElement('div');
-          dot.className = 'map-marker-dot';
-          dot.style.width = '20px';
-          dot.style.height = '20px';
-          dot.style.borderRadius = '50%';
-          dot.style.backgroundColor = '#4285F4';
-          dot.style.border = '2px solid white';
-          
-          // Use the new AdvancedMarkerElement instead of Marker
-          if (window.google.maps.marker.AdvancedMarkerElement) {
-            userMarker = new window.google.maps.marker.AdvancedMarkerElement({
-              position,
-              map: googleMap,
-              content: dot,
-              title: 'Your location'
-            });
-          } else {
-            // Fallback to regular marker if Advanced Marker is not available
-            const standardMarker = new window.google.maps.Marker({
-              position,
-              map: googleMap,
-              title: 'Your location'
-            });
-            userMarker = null;
-            console.warn('Advanced Marker not available, using standard marker');
-          }
-        }
-        
-        // If initial location is provided, use it
-        if (initialLocation) {
-          if (googleMap) {
-            googleMap.setCenter(initialLocation);
-            if (userMarker) {
-              userMarker.position = initialLocation;
+          // Create marker for user's location if needed
+          if (showMarker && googleMap) {
+            const position = initialLocation || userLocation || DEFAULT_CENTER;
+            
+            // Create a simple dot element for the marker
+            const dot = document.createElement('div');
+            dot.className = 'map-marker-dot';
+            dot.style.width = '20px';
+            dot.style.height = '20px';
+            dot.style.borderRadius = '50%';
+            dot.style.backgroundColor = '#4285F4';
+            dot.style.border = '2px solid white';
+            
+            // Use the new AdvancedMarkerElement if available
+            if (window.google.maps.marker && window.google.maps.marker.AdvancedMarkerElement) {
+              userMarker = new window.google.maps.marker.AdvancedMarkerElement({
+                position,
+                map: googleMap,
+                content: dot,
+                title: 'Your location'
+              });
+            } else {
+              // Fallback to regular marker if Advanced Marker is not available
+              const standardMarker = new window.google.maps.Marker({
+                position,
+                map: googleMap,
+                title: 'Your location'
+              });
+              console.warn('Advanced Marker not available, using standard marker');
             }
           }
-        } 
-        // Otherwise try to get user's current position
-        else if (!userLocation) {
-          handleGetLocation(googleMap, userMarker);
+          
+          // If initial location is provided, use it
+          if (initialLocation && googleMap) {
+            googleMap.setCenter(initialLocation);
+          } 
+          // Otherwise try to get user's current position
+          else if (!userLocation) {
+            handleGetLocation(googleMap, userMarker);
+          }
+        } catch (error) {
+          console.error('Error creating Google Maps instance:', error);
+          throw new Error('Failed to create Google Maps instance');
         }
       } catch (error) {
         console.error('Error initializing map:', error);
@@ -137,9 +136,13 @@ const useMapInitialization = ({
             setUserLocation(newLocation);
             
             if (googleMap) {
-              googleMap.setCenter(newLocation);
-              if (marker) {
-                marker.position = newLocation;
+              try {
+                googleMap.setCenter(newLocation);
+                if (marker) {
+                  marker.position = newLocation;
+                }
+              } catch (error) {
+                console.error('Error updating map with location:', error);
               }
             }
             
@@ -163,7 +166,7 @@ const useMapInitialization = ({
           },
           {
             enableHighAccuracy: true,
-            timeout: 10000,
+            timeout: 15000,
             maximumAge: 0
           }
         );
@@ -173,6 +176,7 @@ const useMapInitialization = ({
       }
     };
     
+    // Initialize the map
     initMap();
     
     // Cleanup
