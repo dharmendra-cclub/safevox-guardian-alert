@@ -3,6 +3,7 @@ declare namespace google.maps {
   class Map {
     constructor(mapDiv: Element, opts?: MapOptions);
     setMapTypeId(mapTypeId: string): void;
+    setCenter(latLng: LatLng | LatLngLiteral): void;
     panTo(latLng: LatLng | LatLngLiteral): void;
     addListener(eventName: string, handler: Function): MapsEventListener;
   }
@@ -20,6 +21,8 @@ declare namespace google.maps {
     mapTypeControl?: boolean;
     streetViewControl?: boolean;
     fullscreenControl?: boolean;
+    styles?: any[];
+    gestureHandling?: string;
   }
 
   interface MarkerOptions {
@@ -27,6 +30,7 @@ declare namespace google.maps {
     map?: Map;
     animation?: Animation;
     title?: string;
+    icon?: any;
   }
 
   interface LatLng {
@@ -51,5 +55,13 @@ declare namespace google.maps {
 
   interface MapsEventListener {
     remove(): void;
+  }
+
+  enum SymbolPath {
+    BACKWARD_CLOSED_ARROW,
+    BACKWARD_OPEN_ARROW,
+    CIRCLE,
+    FORWARD_CLOSED_ARROW,
+    FORWARD_OPEN_ARROW
   }
 }
