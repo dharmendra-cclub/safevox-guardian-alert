@@ -42,6 +42,14 @@ const useMapInitialization = ({
         // Load Google Maps API
         await loadGoogleMapsApi();
         
+        // Double check that Google Maps is definitely loaded
+        if (!window.google || !window.google.maps || !window.google.maps.Map) {
+          console.error('Google Maps API not properly loaded');
+          throw new Error('Google Maps API not properly loaded');
+        }
+        
+        console.log('Initializing map with Google Maps API');
+        
         // Initial map setup
         const mapOptions: google.maps.MapOptions = {
           center: initialLocation || DEFAULT_CENTER,
@@ -55,11 +63,11 @@ const useMapInitialization = ({
           styles: DARK_MODE_STYLES
         };
         
-        const googleMap = new google.maps.Map(mapRef.current, mapOptions);
+        const googleMap = new window.google.maps.Map(mapRef.current, mapOptions);
         setMap(googleMap);
         
         // Create marker for user's location if needed
-        if (showMarker) {
+        if (showMarker && window.google.maps.marker) {
           const position = initialLocation || userLocation || DEFAULT_CENTER;
           
           // Create a simple dot element for the marker
@@ -72,12 +80,23 @@ const useMapInitialization = ({
           dot.style.border = '2px solid white';
           
           // Use the new AdvancedMarkerElement instead of Marker
-          userMarker = new google.maps.marker.AdvancedMarkerElement({
-            position,
-            map: googleMap,
-            content: dot,
-            title: 'Your location'
-          });
+          if (window.google.maps.marker.AdvancedMarkerElement) {
+            userMarker = new window.google.maps.marker.AdvancedMarkerElement({
+              position,
+              map: googleMap,
+              content: dot,
+              title: 'Your location'
+            });
+          } else {
+            // Fallback to regular marker if Advanced Marker is not available
+            const standardMarker = new window.google.maps.Marker({
+              position,
+              map: googleMap,
+              title: 'Your location'
+            });
+            userMarker = null;
+            console.warn('Advanced Marker not available, using standard marker');
+          }
         }
         
         // If initial location is provided, use it

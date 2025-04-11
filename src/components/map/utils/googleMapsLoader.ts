@@ -49,7 +49,25 @@ export const loadGoogleMapsApi = (): Promise<void> => {
     script.onload = () => {
       console.log("Google Maps API script loaded");
       window[GOOGLE_MAPS_LOADED_KEY] = false;
-      resolve();
+      
+      // Ensure the API is actually available
+      if (window.google && window.google.maps) {
+        resolve();
+      } else {
+        const checkLoaded = setInterval(() => {
+          if (window.google && window.google.maps) {
+            clearInterval(checkLoaded);
+            console.log("Google Maps API confirmed loaded");
+            resolve();
+          }
+        }, 100);
+        
+        // Set a timeout in case it never loads
+        setTimeout(() => {
+          clearInterval(checkLoaded);
+          reject(new Error('Google Maps API failed to load after script loaded'));
+        }, 5000);
+      }
     };
 
     // Handle errors

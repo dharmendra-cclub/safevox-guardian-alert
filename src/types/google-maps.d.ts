@@ -11,6 +11,10 @@ declare namespace google.maps {
   class Marker {
     constructor(opts?: MarkerOptions);
     setPosition(latLng: LatLng | LatLngLiteral): void;
+    setMap(map: Map | null): void;
+    setTitle(title: string): void;
+    setIcon(icon: string | Icon | Symbol): void;
+    setAnimation(animation: Animation | null): void;
   }
 
   namespace marker {
@@ -47,7 +51,44 @@ declare namespace google.maps {
     map?: Map;
     animation?: Animation;
     title?: string;
-    icon?: any;
+    icon?: string | Icon | Symbol;
+  }
+
+  interface Icon {
+    url?: string;
+    size?: Size;
+    origin?: Point;
+    anchor?: Point;
+    scaledSize?: Size;
+    labelOrigin?: Point;
+    path?: string | SymbolPath;
+    fillColor?: string;
+    fillOpacity?: number;
+    strokeColor?: string;
+    strokeWeight?: number;
+    scale?: number;
+  }
+
+  interface Symbol {
+    path: string | SymbolPath;
+    fillColor?: string;
+    fillOpacity?: number;
+    strokeColor?: string;
+    strokeOpacity?: number;
+    strokeWeight?: number;
+    scale?: number;
+  }
+
+  class Size {
+    constructor(width: number, height: number, widthUnit?: string, heightUnit?: string);
+    width: number;
+    height: number;
+  }
+
+  class Point {
+    constructor(x: number, y: number);
+    x: number;
+    y: number;
   }
 
   interface LatLng {
@@ -80,5 +121,13 @@ declare namespace google.maps {
     CIRCLE,
     FORWARD_CLOSED_ARROW,
     FORWARD_OPEN_ARROW
+  }
+}
+
+// Add the global type for Window
+declare global {
+  interface Window {
+    google: typeof google;
+    [GOOGLE_MAPS_LOADED_KEY]: boolean;
   }
 }
