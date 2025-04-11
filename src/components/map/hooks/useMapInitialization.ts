@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { loadGoogleMapsApi } from '../utils/googleMapsLoader';
 import { DARK_MODE_STYLES } from '../constants/mapStyles';
@@ -21,10 +22,15 @@ const useMapInitialization = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const { setMap, setUserLocation, userLocation, setIsLoadingLocation } = useMap();
+  const { 
+    setMap, 
+    map, 
+    setUserLocation, 
+    userLocation, 
+    setIsLoadingLocation 
+  } = useMap();
   
   useEffect(() => {
-    let map: google.maps.Map | null = null;
     let userMarker: google.maps.Marker | null = null;
     
     const initMap = async () => {
@@ -44,13 +50,13 @@ const useMapInitialization = ({
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: false,
-          gestureHandling: 'greedy', // This enables scrolling without Ctrl key
+          gestureHandling: 'cooperative', // Changed to 'cooperative' to enable scrolling without Ctrl
           zoomControl: true,
           styles: DARK_MODE_STYLES
         };
         
-        map = new google.maps.Map(mapRef.current, mapOptions);
-        setMap(map);
+        const googleMap = new google.maps.Map(mapRef.current, mapOptions);
+        setMap(googleMap);
         
         // Create marker for user's location if not provided initially
         if (showMarker) {
@@ -58,7 +64,7 @@ const useMapInitialization = ({
           
           userMarker = new google.maps.Marker({
             position,
-            map,
+            map: googleMap,
             icon: {
               path: google.maps.SymbolPath.CIRCLE,
               scale: 10,
@@ -73,8 +79,8 @@ const useMapInitialization = ({
         
         // If initial location is provided, use it
         if (initialLocation) {
-          if (map) {
-            map.setCenter(initialLocation);
+          if (googleMap) {
+            googleMap.setCenter(initialLocation);
             if (userMarker) {
               userMarker.setPosition(initialLocation);
             }
@@ -82,7 +88,7 @@ const useMapInitialization = ({
         } 
         // Otherwise try to get user's current position
         else if (!userLocation) {
-          handleGetLocation();
+          handleGetLocation(googleMap, userMarker);
         }
       } catch (error) {
         console.error('Error initializing map:', error);
@@ -92,7 +98,7 @@ const useMapInitialization = ({
       }
     };
     
-    const handleGetLocation = () => {
+    const handleGetLocation = (googleMap: google.maps.Map | null, marker: google.maps.Marker | null) => {
       setIsLoadingLocation(true);
       
       if (navigator.geolocation) {
@@ -105,10 +111,10 @@ const useMapInitialization = ({
             
             setUserLocation(newLocation);
             
-            if (map) {
-              map.setCenter(newLocation);
-              if (userMarker) {
-                userMarker.setPosition(newLocation);
+            if (googleMap) {
+              googleMap.setCenter(newLocation);
+              if (marker) {
+                marker.setPosition(newLocation);
               }
             }
             
@@ -150,7 +156,7 @@ const useMapInitialization = ({
         setMap(null);
       }
     };
-  }, [initialLocation, satelliteView, showMarker, setMap, userLocation, setUserLocation]);
+  }, [initialLocation, satelliteView, showMarker, setMap, map, userLocation, setUserLocation, setIsLoadingLocation]);
   
   return { mapRef, isLoading, locationError };
 };
