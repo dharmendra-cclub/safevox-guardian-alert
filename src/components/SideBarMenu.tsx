@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Home, AlertCircle, User, Bell, MessageCircle, Settings, 
-  HelpCircle, TimerOff, Phone, Clock, LogOut
+  HelpCircle, TimerOff, Phone, Clock, LogOut, Mic, Car, 
 } from 'lucide-react';
 
 interface SideBarProps {
@@ -73,7 +73,7 @@ const SideBarMenu: React.FC<SideBarProps> = ({ isOpen, onClose, onOpenChange }) 
         <ScrollArea className="h-full">
           <div className="flex flex-col p-4 space-y-4">
             {/* User Profile */}
-            <div className="flex items-center space-x-3 mb-6">
+            <div className="flex items-center space-x-3 mb-2">
               <Avatar className="h-12 w-12 border-2 border-primary">
                 {avatarUrl ? (
                   <AvatarImage src={avatarUrl} alt={fullName} />
@@ -83,14 +83,20 @@ const SideBarMenu: React.FC<SideBarProps> = ({ isOpen, onClose, onOpenChange }) 
                   </AvatarFallback>
                 )}
               </Avatar>
-              <div>
-                <h3 className="font-medium">{fullName}</h3>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <div className="overflow-hidden">
+                <h3 className="font-medium truncate">{fullName}</h3>
+                <p className="text-sm text-muted-foreground truncate pr-2">{user?.email}</p>
               </div>
             </div>
 
+            {/* View Profile Link (Moved to top) */}
+            <Link to="/profile" className="sidebar-item" onClick={onClose}>
+              <User size={18} />
+              <span>View Profile</span>
+            </Link>
+
             {/* Navigation Items */}
-            <nav className="space-y-1">
+            <nav className="space-y-1 mt-4">
               <Link to="/home" className="sidebar-item" onClick={onClose}>
                 <Home size={18} />
                 <span>Home</span>
@@ -107,18 +113,23 @@ const SideBarMenu: React.FC<SideBarProps> = ({ isOpen, onClose, onOpenChange }) 
               </Link>
 
               <Link to="/voice-activation" className="sidebar-item" onClick={onClose}>
+                <Mic size={18} />
+                <span>Voice Activation</span>
+              </Link>
+              
+              <Link to="/recordings" className="sidebar-item" onClick={onClose}>
                 <MessageCircle size={18} />
-                <span>Voice Codewords</span>
+                <span>Recordings</span>
+              </Link>
+              
+              <Link to="/drive" className="sidebar-item" onClick={onClose}>
+                <Car size={18} />
+                <span>Drive</span>
               </Link>
               
               <Link to="/timer" className="sidebar-item" onClick={onClose}>
                 <TimerOff size={18} />
                 <span>Safety Timer</span>
-              </Link>
-
-              <Link to="/profile" className="sidebar-item" onClick={onClose}>
-                <User size={18} />
-                <span>My Profile</span>
               </Link>
 
               <Link to="/settings" className="sidebar-item" onClick={onClose}>

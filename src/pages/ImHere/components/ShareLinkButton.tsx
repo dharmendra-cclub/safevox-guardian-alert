@@ -36,11 +36,11 @@ const ShareLinkButton: React.FC<ShareLinkButtonProps> = ({ userLocation }) => {
 
   return (
     <Button
-      className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm z-10"
+      className="w-full bg-secondary hover:bg-secondary/90"
       onClick={handleShareLink}
     >
       <Share className="mr-2 h-4 w-4" />
-      Share Link
+      Share Location Link
     </Button>
   );
 };

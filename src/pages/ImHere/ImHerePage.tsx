@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Send, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MapView from '@/components/map/MapView';
 import BottomNavBar from '@/components/BottomNavBar';
-import ContactSelector from './components/ContactSelector';
 import LocationShareButton from './components/LocationShareButton';
 import ShareLinkButton from './components/ShareLinkButton';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ import { contactsService } from '@/services/sos';
 import { Contact } from './types';
 import SOSButton from '@/components/SOSButton';
 import { sosService } from '@/services/sos';
+import { DrawerContent, DrawerTrigger, Drawer } from '@/components/ui/drawer';
 
 const ImHerePage: React.FC = () => {
   const navigate = useNavigate();
@@ -133,27 +134,80 @@ const ImHerePage: React.FC = () => {
           initialLocation={userLocation || undefined}
         />
         
-        {/* Contact Selector */}
-        <div className="absolute top-4 left-4 right-4">
-          <ContactSelector 
-            contacts={contacts} 
-            loading={loading} 
-            toggleContactSelection={toggleContactSelection} 
-          />
-        </div>
-        
         {/* Action Buttons */}
-        <div className="absolute bottom-24 left-4 right-4 space-y-2">
-          <LocationShareButton 
-            onSendLocation={handleSendLocation} 
-            sending={sending} 
-            loading={loading}
-            contactsCount={contacts.filter(c => c.selected).length}
-          />
+        <div className="absolute bottom-24 left-4 right-4 space-y-3">
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button 
+                className="w-full bg-safevox-primary hover:bg-safevox-primary/90"
+              >
+                <Send className="mr-2 h-4 w-4" />
+                Send My Location via SMS
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent className="px-4 pb-4">
+              <div className="mx-auto w-full max-w-sm">
+                <div className="p-4 pb-2">
+                  <h3 className="text-lg font-semibold">Select contacts</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Choose who to share your location with
+                  </p>
+                </div>
+                
+                <div className="max-h-[50vh] overflow-y-auto mt-2">
+                  {contacts.length === 0 ? (
+                    <div className="text-center p-4">
+                      <p className="text-muted-foreground">No contacts found</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2"
+                        onClick={() => navigate('/emergency-contacts')}
+                      >
+                        Add Contacts
+                      </Button>
+                    </div>
+                  ) : (
+                    contacts.map(contact => (
+                      <div 
+                        key={contact.id}
+                        className={`p-3 border-b flex justify-between items-center ${
+                          contact.selected ? 'bg-primary/10' : ''
+                        }`}
+                        onClick={() => toggleContactSelection(contact.id)}
+                      >
+                        <div>
+                          <p className="font-medium">{contact.name}</p>
+                          <p className="text-sm text-muted-foreground">{contact.phone}</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border ${
+                          contact.selected ? 'bg-primary border-primary' : 'border-gray-400'
+                        }`}>
+                          {contact.selected && (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
+                              <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.739a.75.75 0 011.04-.208z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                
+                <div className="mt-4">
+                  <Button 
+                    className="w-full" 
+                    disabled={!contacts.some(c => c.selected) || sending}
+                    onClick={handleSendLocation}
+                  >
+                    {sending ? 'Sending...' : 'Send Location'}
+                  </Button>
+                </div>
+              </div>
+            </DrawerContent>
+          </Drawer>
           
-          <ShareLinkButton 
-            userLocation={userLocation}
-          />
+          <ShareLinkButton userLocation={userLocation} />
         </div>
         
         <SOSButton onClick={handleSOSPress} />
