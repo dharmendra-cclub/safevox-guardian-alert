@@ -9,9 +9,11 @@ import SOSButton from '@/components/SOSButton';
 import BottomNavBar from '@/components/BottomNavBar';
 import { sosService } from '@/services/sos';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Drive: React.FC = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [volume, setVolume] = useState([70]);
   const [isDriving, setIsDriving] = useState(true);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -59,7 +61,7 @@ const Drive: React.FC = () => {
   };
 
   const handleSOSPress = () => {
-    sosService.activate();
+    sosService.activate(undefined, undefined, 'button');
     navigate('/sos-activated');
   };
 
@@ -73,6 +75,11 @@ const Drive: React.FC = () => {
       startAccidentDetection();
       toast.success('Driving mode activated');
     }
+  };
+
+  const simulateAccident = () => {
+    sosService.simulateAccident();
+    navigate('/sos-activated');
   };
 
   return (
@@ -110,19 +117,31 @@ const Drive: React.FC = () => {
           />
         </div>
         
-        {/* Drive Status - Moved up to prevent overlap with SOS button */}
-        <div className="absolute bottom-32 left-0 right-0 bg-card/80 backdrop-blur-sm p-3 z-10">
+        {/* Drive Status - Moved up significantly to prevent overlap with SOS button */}
+        <div className="absolute bottom-28 sm:bottom-32 left-0 right-0 bg-card/80 backdrop-blur-sm p-3 z-10">
           <p className="text-center text-sm mb-2">
             {isDriving 
               ? 'Driving mode active. Accident detection enabled.' 
               : 'Start driving to enable accident detection.'}
           </p>
-          <Button 
-            className={`w-full ${isDriving ? 'bg-orange-500 hover:bg-orange-600' : 'bg-safevox-primary hover:bg-safevox-primary/90'}`}
-            onClick={toggleDriving}
-          >
-            {isDriving ? 'Exit Driving Mode' : 'Start Driving'}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              className={`w-full ${isDriving ? 'bg-orange-500 hover:bg-orange-600' : 'bg-safevox-primary hover:bg-safevox-primary/90'}`}
+              onClick={toggleDriving}
+            >
+              {isDriving ? 'Exit Driving Mode' : 'Start Driving'}
+            </Button>
+            
+            {isDriving && (
+              <Button 
+                variant="outline"
+                className="w-full"
+                onClick={simulateAccident}
+              >
+                Simulate Accident
+              </Button>
+            )}
+          </div>
         </div>
         
         {/* SOS Button */}

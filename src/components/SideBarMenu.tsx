@@ -1,12 +1,12 @@
 
-import React, { useEffect, useState } from 'react';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import React from 'react';
+import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { User, Bell, Clock, Settings, HelpCircle, History, AlertTriangle, UserCog, Car, LogOut, Mic } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { Home, User, Bell, Timer, MapPin, Phone, Mic, Settings, HelpCircle, LogOut, Car, Headphones, Clock } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SideBarMenuProps {
@@ -16,49 +16,9 @@ interface SideBarMenuProps {
 
 const SideBarMenu: React.FC<SideBarMenuProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, signOut } = useAuth();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [userInitials, setUserInitials] = useState('');
   
-  useEffect(() => {
-    if (user && isOpen) {
-      fetchUserProfile();
-    }
-  }, [user, isOpen]);
-  
-  const fetchUserProfile = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('full_name, avatar_url')
-        .eq('id', user.id)
-        .single();
-      
-      if (error) throw error;
-      
-      if (data) {
-        setAvatarUrl(data.avatar_url);
-        
-        if (data.full_name) {
-          const initials = data.full_name
-            .split(' ')
-            .map(part => part[0])
-            .join('')
-            .toUpperCase()
-            .substring(0, 2);
-          
-          setUserInitials(initials);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  };
-  
-  const handleNavigation = (path: string) => {
+  const handleNavigate = (path: string) => {
     navigate(path);
     onClose();
   };
@@ -66,128 +26,161 @@ const SideBarMenu: React.FC<SideBarMenuProps> = ({ isOpen, onClose }) => {
   const handleLogout = async () => {
     try {
       await signOut();
-      toast.success('Logged out successfully');
-      navigate('/login');
       onClose();
+      navigate('/login');
     } catch (error) {
-      console.error('Error logging out:', error);
-      toast.error('Failed to log out');
+      console.error('Error signing out:', error);
     }
-  };
-  
-  const isActive = (path: string) => {
-    return location.pathname === path;
   };
   
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="p-0 w-[300px] overflow-y-auto max-h-screen">
-        {/* User Profile */}
-        <div className="p-6 bg-primary/10">
-          <div className="flex items-center space-x-4 mb-4">
-            <Avatar className="h-16 w-16 border-2 border-primary">
-              <AvatarImage src={avatarUrl} alt={user?.user_metadata?.full_name || 'User'} />
-              <AvatarFallback className="text-lg">
-                {userInitials || (user?.user_metadata?.full_name ? user.user_metadata.full_name.charAt(0).toUpperCase() : 'U')}
+      <SheetContent side="left" className="p-0 w-[85vw] max-w-sm">
+        <div className="bg-primary-foreground bg-[#000000] p-4">
+          <SheetHeader className="text-left pb-4">
+            <Avatar className="h-16 w-16 border-2 border-white mb-2">
+              <AvatarImage src={user?.avatar_url || ''} alt="Profile" />
+              <AvatarFallback className="bg-primary text-white text-xl">
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
-            <div className="overflow-hidden">
-              <h3 className="font-semibold text-lg truncate">{user?.user_metadata?.full_name || 'User'}</h3>
-              <p className="text-sm text-muted-foreground truncate pr-2">{user?.email}</p>
+            <div>
+              <h2 className="text-lg font-semibold text-white">{user?.name || 'User'}</h2>
+              <p className="text-sm text-gray-300 truncate max-w-[calc(85vw-4rem)]">{user?.email}</p>
+            </div>
+          </SheetHeader>
+        </div>
+        
+        <ScrollArea className="h-[calc(100vh-9.5rem)] py-2">
+          <div className="space-y-1 px-2">
+            {/* User section */}
+            <div className="py-2">
+              <Button
+                variant="ghost"
+                className="sidebar-item w-full justify-start"
+                onClick={() => handleNavigate('/profile')}
+              >
+                <User size={20} />
+                <span>View Profile</span>
+              </Button>
+            </div>
+            
+            <div className="px-3 py-2">
+              <h3 className="mb-2 px-1 text-sm font-semibold">Safety Features</h3>
+              <div className="space-y-1">
+                <Button
+                  variant="ghost"
+                  className="sidebar-item w-full justify-start"
+                  onClick={() => handleNavigate('/home')}
+                >
+                  <Home size={20} />
+                  <span>Home</span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  className="sidebar-item w-full justify-start"
+                  onClick={() => handleNavigate('/emergency-contacts')}
+                >
+                  <Phone size={20} />
+                  <span>Emergency Contacts</span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  className="sidebar-item w-full justify-start"
+                  onClick={() => handleNavigate('/voice-activation')}
+                >
+                  <Mic size={20} />
+                  <span>Voice Activation</span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  className="sidebar-item w-full justify-start"
+                  onClick={() => handleNavigate('/drive')}
+                >
+                  <Car size={20} />
+                  <span>Drive</span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  className="sidebar-item w-full justify-start"
+                  onClick={() => handleNavigate('/recordings')}
+                >
+                  <Headphones size={20} />
+                  <span>Recordings</span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  className="sidebar-item w-full justify-start"
+                  onClick={() => handleNavigate('/history')}
+                >
+                  <Clock size={20} />
+                  <span>SOS History</span>
+                </Button>
+              </div>
+            </div>
+            
+            <div className="px-3 py-2">
+              <h3 className="mb-2 px-1 text-sm font-semibold">Location Sharing</h3>
+              <div className="space-y-1">
+                <Button
+                  variant="ghost"
+                  className="sidebar-item w-full justify-start"
+                  onClick={() => handleNavigate('/im-here')}
+                >
+                  <MapPin size={20} />
+                  <span>I'm Here</span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  className="sidebar-item w-full justify-start"
+                  onClick={() => handleNavigate('/timer')}
+                >
+                  <Timer size={20} />
+                  <span>Timer</span>
+                </Button>
+              </div>
+            </div>
+            
+            <div className="px-3 py-2">
+              <h3 className="mb-2 px-1 text-sm font-semibold">Settings</h3>
+              <div className="space-y-1">
+                <Button
+                  variant="ghost"
+                  className="sidebar-item w-full justify-start"
+                  onClick={() => handleNavigate('/settings')}
+                >
+                  <Settings size={20} />
+                  <span>Settings</span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  className="sidebar-item w-full justify-start"
+                  onClick={() => handleNavigate('/help')}
+                >
+                  <HelpCircle size={20} />
+                  <span>Help & Support</span>
+                </Button>
+              </div>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={() => handleNavigation('/profile')}
-          >
-            View Profile
-          </Button>
-        </div>
+        </ScrollArea>
         
-        {/* Navigation Links */}
-        <div className="p-4 space-y-1">
-          <a 
-            className={`sidebar-item ${isActive('/home') ? 'active' : ''}`}
-            onClick={() => handleNavigation('/home')}
-          >
-            <User size={20} />
-            <span>Home</span>
-          </a>
-          
-          <a 
-            className={`sidebar-item ${isActive('/emergency-contacts') ? 'active' : ''}`}
-            onClick={() => handleNavigation('/emergency-contacts')}
-          >
-            <Bell size={20} />
-            <span>Emergency Contacts</span>
-          </a>
-          
-          <a 
-            className={`sidebar-item ${isActive('/timer') ? 'active' : ''}`}
-            onClick={() => handleNavigation('/timer')}
-          >
-            <Clock size={20} />
-            <span>Timer</span>
-          </a>
-          
-          <a 
-            className={`sidebar-item ${isActive('/drive') ? 'active' : ''}`}
-            onClick={() => handleNavigation('/drive')}
-          >
-            <Car size={20} />
-            <span>Drive Mode</span>
-          </a>
-          
-          <a 
-            className={`sidebar-item ${isActive('/voice-activation') ? 'active' : ''}`}
-            onClick={() => handleNavigation('/voice-activation')}
-          >
-            <Mic size={20} />
-            <span>Voice Activation</span>
-          </a>
-          
-          <a 
-            className={`sidebar-item ${isActive('/recordings') ? 'active' : ''}`}
-            onClick={() => handleNavigation('/recordings')}
-          >
-            <Bell size={20} />
-            <span>Recordings</span>
-          </a>
-          
-          <a 
-            className={`sidebar-item ${isActive('/history') ? 'active' : ''}`}
-            onClick={() => handleNavigation('/history')}
-          >
-            <History size={20} />
-            <span>SOS History</span>
-          </a>
-        </div>
-        
-        <div className="border-t border-border mt-2 pt-2 p-4 space-y-1">
-          <a 
-            className={`sidebar-item ${isActive('/settings') ? 'active' : ''}`}
-            onClick={() => handleNavigation('/settings')}
-          >
-            <Settings size={20} />
-            <span>Settings</span>
-          </a>
-          
-          <a 
-            className={`sidebar-item ${isActive('/help') ? 'active' : ''}`}
-            onClick={() => handleNavigation('/help')}
-          >
-            <HelpCircle size={20} />
-            <span>Help & Support</span>
-          </a>
-          
-          <a 
-            className="sidebar-item text-destructive hover:bg-destructive/10"
+        <div className="border-t border-border p-4">
+          <Button
+            variant="ghost"
+            className="sidebar-item w-full justify-start text-destructive hover:text-destructive"
             onClick={handleLogout}
           >
             <LogOut size={20} />
             <span>Logout</span>
-          </a>
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

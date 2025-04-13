@@ -12,23 +12,56 @@ class HistoryService {
   public async saveSOSHistory(
     location: Location | null,
     message: string,
-    contactIds: string[]
+    contactIds: string[],
+    triggerType: 'button' | 'codeword' | 'crash' | 'timer' = 'button',
+    codewordUsed?: string,
+    audioUrl?: string
   ): Promise<void> {
     if (!this.userId) return;
     
     try {
-      const historyEntry: SOSHistoryEntry = {
-        userId: this.userId,
+      const historyEntry = {
+        user_id: this.userId,
         timestamp: new Date().toISOString(),
         location,
         message,
-        contactIds
+        contact_ids: contactIds,
+        trigger_type: triggerType,
+        codeword_used: codewordUsed,
+        audio_url: audioUrl
       };
       
-      // In a real app, save to a 'sos_history' table
-      console.log('Saving SOS history:', historyEntry);
+      // Save to Supabase sos_history table
+      const { error } = await supabase
+        .from('sos_history')
+        .insert(historyEntry);
+      
+      if (error) {
+        console.error('Error saving SOS history:', error);
+      }
     } catch (error) {
       console.error('Error saving SOS history:', error);
+    }
+  }
+
+  public async fetchSOSHistory(): Promise<SOSHistoryEntry[]> {
+    if (!this.userId) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('sos_history')
+        .select('*')
+        .eq('user_id', this.userId)
+        .order('timestamp', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching SOS history:', error);
+      return [];
     }
   }
 }

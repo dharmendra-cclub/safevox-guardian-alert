@@ -14,9 +14,11 @@ import { sosService } from '@/services/sos';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { voiceRecognitionService } from '@/services/VoiceRecognitionService';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -83,7 +85,7 @@ const Home: React.FC = () => {
   };
 
   const handleSOSPress = () => {
-    sosService.activate();
+    sosService.activate(undefined, undefined, 'button');
     toast.success('SOS activated!');
     navigate('/sos-activated');
   };
