@@ -250,7 +250,7 @@ class VoiceRecognitionService {
     this.stopListening();
     
     // Activate SOS with the codeword message and contacts
-    sosService.activate(codeWord.message, codeWord.contacts)
+    sosService.activate(codeWord.message, codeWord.contacts, 'codeword', codeWord.word)
       .then(success => {
         if (success) {
           // Navigate to SOS activated screen through the service
