@@ -31,7 +31,7 @@ class HistoryService {
         audioUrl
       };
       
-      // Convert Location to a JSON object for storage
+      // Convert Location to a simple object for storage in jsonb column
       const locationJson = location ? { lat: location.lat, lng: location.lng } : null;
       
       // Save to the sos_history table in Supabase
@@ -70,20 +70,31 @@ class HistoryService {
       if (error) throw error;
       
       // Convert the fetched data to SOSHistoryEntry format
-      return (data || []).map(item => ({
-        id: item.id,
-        userId: item.user_id,
-        timestamp: item.timestamp,
-        location: item.location ? { 
-          lat: parseFloat(item.location.lat), 
-          lng: parseFloat(item.location.lng) 
-        } : null,
-        message: item.message,
-        contactIds: item.contact_ids,
-        triggerType: item.trigger_type as 'button' | 'codeword' | 'crash' | 'timer',
-        codewordUsed: item.codeword_used || '',
-        audioUrl: item.audio_url || ''
-      }));
+      return (data || []).map(item => {
+        // Safely handle location data
+        let locationData = null;
+        if (item.location && typeof item.location === 'object') {
+          // Ensure location has the right format
+          if ('lat' in item.location && 'lng' in item.location) {
+            locationData = {
+              lat: parseFloat(String(item.location.lat)),
+              lng: parseFloat(String(item.location.lng))
+            };
+          }
+        }
+        
+        return {
+          id: item.id,
+          userId: item.user_id,
+          timestamp: item.timestamp,
+          location: locationData,
+          message: item.message,
+          contactIds: item.contact_ids,
+          triggerType: item.trigger_type as 'button' | 'codeword' | 'crash' | 'timer',
+          codewordUsed: item.codeword_used || '',
+          audioUrl: item.audio_url || ''
+        };
+      });
     } catch (error) {
       console.error('Error fetching SOS history:', error);
       return [];

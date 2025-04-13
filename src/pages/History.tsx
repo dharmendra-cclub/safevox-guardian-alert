@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, Clock, MapPin, Mic, Users, 
   ExternalLink, AlertTriangle, Phone, 
-  Timer as TimerIcon, Message
+  Timer as TimerIcon, MessageSquare
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
@@ -76,7 +75,7 @@ const History: React.FC = () => {
       case 'button':
         return { label: 'SOS Button', icon: <AlertTriangle className="h-4 w-4 mr-1" />, color: 'bg-destructive/10 text-destructive' };
       case 'codeword':
-        return { label: 'Codeword', icon: <Message className="h-4 w-4 mr-1" />, color: 'bg-blue-500/10 text-blue-500' };
+        return { label: 'Codeword', icon: <MessageSquare className="h-4 w-4 mr-1" />, color: 'bg-blue-500/10 text-blue-500' };
       case 'crash':
         return { label: 'Crash Detected', icon: <AlertTriangle className="h-4 w-4 mr-1" />, color: 'bg-orange-500/10 text-orange-500' };
       case 'timer':
