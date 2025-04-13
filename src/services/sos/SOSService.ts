@@ -11,6 +11,7 @@ class SOSService {
   private isActivated: boolean = false;
   private activationStartTime: number = 0;
   private recordingUrl: string | null = null;
+  private navigateCallback: ((path: string) => void) | null = null;
 
   constructor() {
     // Location tracking is handled by locationService
@@ -22,6 +23,22 @@ class SOSService {
     contactsService.setUserId(userId);
     notificationService.setUserId(userId);
     historyService.setUserId(userId);
+  }
+
+  public registerNavigateCallback(callback: (path: string) => void) {
+    this.navigateCallback = callback;
+  }
+
+  public navigateToSOSActivated() {
+    if (this.navigateCallback) {
+      this.navigateCallback('/sos-activated');
+    } else {
+      console.error('Navigate callback not registered');
+      // If we're in a browser context, try to fallback to window.location
+      if (typeof window !== 'undefined') {
+        window.location.href = '/sos-activated';
+      }
+    }
   }
 
   public async fetchEmergencyContacts() {

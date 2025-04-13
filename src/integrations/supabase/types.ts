@@ -82,6 +82,42 @@ export type Database = {
           },
         ]
       }
+      sos_history: {
+        Row: {
+          audio_url: string | null
+          codeword_used: string | null
+          contact_ids: string[]
+          id: string
+          location: Json | null
+          message: string
+          timestamp: string
+          trigger_type: string | null
+          user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          codeword_used?: string | null
+          contact_ids: string[]
+          id?: string
+          location?: Json | null
+          message: string
+          timestamp?: string
+          trigger_type?: string | null
+          user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          codeword_used?: string | null
+          contact_ids?: string[]
+          id?: string
+          location?: Json | null
+          message?: string
+          timestamp?: string
+          trigger_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           address: string | null

@@ -26,6 +26,7 @@ const Home: React.FC = () => {
   useEffect(() => {
     if (user) {
       sosService.setUserId(user.id);
+      sosService.registerNavigateCallback(navigate);
       voiceRecognitionService.setUserId(user.id);
       fetchUserProfile();
       
@@ -48,7 +49,7 @@ const Home: React.FC = () => {
     return () => {
       voiceRecognitionService.stopListening();
     };
-  }, [user]);
+  }, [user, navigate]);
   
   const fetchUserProfile = async () => {
     if (!user) return;
@@ -93,6 +94,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
       <div className="bg-[#000000] p-4 flex items-center justify-between z-10">
         <Button
           variant="ghost"
@@ -128,7 +130,10 @@ const Home: React.FC = () => {
           initialLocation={userLocation || undefined}
         />
         
-        <SOSButton onClick={handleSOSPress} className="bottom-8 z-50" />
+        {/* Only show SOS button when sidebar is closed */}
+        {!isSidebarOpen && (
+          <SOSButton onClick={handleSOSPress} className="bottom-8 z-50" />
+        )}
       </div>
 
       <BottomNavBar />

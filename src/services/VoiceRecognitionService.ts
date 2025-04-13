@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { sosService } from './sos';
 import { CodeWord } from '@/types/voice-activation';
+import { useNavigate } from 'react-router-dom';
 
 // Define SpeechRecognition interface
 interface SpeechRecognitionEvent extends Event {
@@ -249,7 +250,13 @@ class VoiceRecognitionService {
     this.stopListening();
     
     // Activate SOS with the codeword message and contacts
-    sosService.activate(codeWord.message, codeWord.contacts);
+    sosService.activate(codeWord.message, codeWord.contacts)
+      .then(success => {
+        if (success) {
+          // Navigate to SOS activated screen through the service
+          sosService.navigateToSOSActivated();
+        }
+      });
     
     // Resume listening after a short delay
     setTimeout(() => {
