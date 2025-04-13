@@ -2,14 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Phone, AlertTriangle } from 'lucide-react';
+import { Phone, AlertTriangle, FireExtinguisher, AmbulanceIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import MapView from '@/components/map/MapView';
 import { useAuth } from '@/hooks/useAuth';
 import { sosService } from '@/services/sos';
 import { audioRecordingService } from '@/services/AudioRecordingService';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 const SOSActivated: React.FC = () => {
   const navigate = useNavigate();
@@ -17,7 +16,6 @@ const SOSActivated: React.FC = () => {
   const [secondsActive, setSecondsActive] = useState(0);
   const [contactsCount, setContactsCount] = useState(0);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const isMobile = useIsMobile();
   
   // Set user ID for services
   useEffect(() => {
@@ -92,10 +90,10 @@ const SOSActivated: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Emergency Banner */}
-      <div className="bg-[#222222]/80 p-3 md:p-4 flex flex-col items-center z-10">
-        <AlertTriangle className="h-6 w-6 md:h-8 md:w-8 mb-1 text-[#934B49]" />
-        <h1 className="text-lg md:text-xl font-bold text-[#934B49]">SOS Activated!!!</h1>
-        <p className="text-xs md:text-sm">
+      <div className="bg-[#222222]/80 p-4 flex flex-col items-center z-10">
+        <AlertTriangle className="h-8 w-8 mb-1 text-[#934B49]" />
+        <h1 className="text-xl font-bold text-[#934B49]">SOS Activated!!!</h1>
+        <p className="text-sm">
           Alert sent to {contactsCount} emergency contacts ({formatTime(secondsActive)})
         </p>
       </div>
@@ -109,82 +107,71 @@ const SOSActivated: React.FC = () => {
         />
         
         {/* Emergency Services */}
-        <div className="absolute bottom-0 left-0 right-0 bg-card/90 backdrop-blur-sm rounded-t-lg p-3 md:p-4 z-10">
-          <h2 className="text-base md:text-lg font-semibold mb-2 md:mb-3">Quick call emergency services</h2>
+        <div className="absolute bottom-0 left-0 right-0 bg-card/90 backdrop-blur-sm rounded-t-lg p-4 z-10">
+          <h2 className="text-lg font-semibold mb-3">Quick call emergency services</h2>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-3 md:mb-4">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             <Button 
               variant="outline" 
-              className="flex flex-col items-center justify-center h-16 md:h-20"
+              className="flex flex-col items-center justify-center h-20"
               onClick={() => handleEmergencyCall('Police')}
             >
-              <Phone className="h-4 w-4 md:h-5 md:w-5 mb-1" />
-              <span className="text-xs md:text-sm">Police</span>
+              <Phone className="h-5 w-5 mb-1" />
+              <span>Police</span>
             </Button>
             
             <Button 
               variant="outline" 
-              className="flex flex-col items-center justify-center h-16 md:h-20"
+              className="flex flex-col items-center justify-center h-20"
               onClick={() => handleEmergencyCall('Ambulance')}
             >
-              <Phone className="h-4 w-4 md:h-5 md:w-5 mb-1" />
-              <span className="text-xs md:text-sm">Ambulance</span>
+              <Phone className="h-5 w-5 mb-1" />
+              <span>Ambulance</span>
             </Button>
             
-            {isMobile ? (
-              <Popover>
-                <PopoverTrigger asChild>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="flex flex-col items-center justify-center h-20"
+                >
+                  <Phone className="h-5 w-5 mb-1" />
+                  <span>Others</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56" align="center">
+                <div className="grid gap-2">
                   <Button 
-                    variant="outline" 
-                    className="flex flex-col items-center justify-center h-16 md:h-20 col-span-2 md:col-span-1"
+                    variant="ghost" 
+                    className="justify-start"
+                    onClick={() => handleEmergencyCall('Fire')}
                   >
-                    <Phone className="h-4 w-4 md:h-5 md:w-5 mb-1" />
-                    <span className="text-xs md:text-sm">Others</span>
+                    <Phone className="mr-2 h-4 w-4" />
+                    <span>Fire Department</span>
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-56" align="center">
-                  <div className="grid gap-2">
-                    <Button 
-                      variant="ghost" 
-                      className="justify-start"
-                      onClick={() => handleEmergencyCall('Fire')}
-                    >
-                      <Phone className="mr-2 h-4 w-4" />
-                      <span>Fire Department</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      className="justify-start"
-                      onClick={() => handleEmergencyCall('Coast Guard')}
-                    >
-                      <Phone className="mr-2 h-4 w-4" />
-                      <span>Coast Guard</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      className="justify-start"
-                      onClick={() => handleEmergencyCall('Mountain Rescue')}
-                    >
-                      <Phone className="mr-2 h-4 w-4" />
-                      <span>Mountain Rescue</span>
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            ) : (
-              <Button 
-                variant="outline" 
-                className="flex flex-col items-center justify-center h-16 md:h-20"
-                onClick={() => handleEmergencyCall('Fire')}
-              >
-                <Phone className="h-5 w-5 mb-1" />
-                <span>Fire Dept</span>
-              </Button>
-            )}
+                  <Button 
+                    variant="ghost" 
+                    className="justify-start"
+                    onClick={() => handleEmergencyCall('Coast Guard')}
+                  >
+                    <Phone className="mr-2 h-4 w-4" />
+                    <span>Coast Guard</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="justify-start"
+                    onClick={() => handleEmergencyCall('Mountain Rescue')}
+                  >
+                    <Phone className="mr-2 h-4 w-4" />
+                    <span>Mountain Rescue</span>
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           
           <Button
-            className="w-full bg-green-500 hover:bg-green-600 py-2 md:py-3"
+            className="w-full bg-green-500 hover:bg-green-600"
             onClick={handleDeactivate}
           >
             Deactivate

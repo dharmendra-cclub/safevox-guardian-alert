@@ -14,7 +14,6 @@ import { sosService } from '@/services/sos';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { voiceRecognitionService } from '@/services/VoiceRecognitionService';
 import { supabase } from '@/integrations/supabase/client';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +22,6 @@ const Home: React.FC = () => {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userInitials, setUserInitials] = useState('');
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (user) {
@@ -85,7 +83,7 @@ const Home: React.FC = () => {
   };
 
   const handleSOSPress = () => {
-    sosService.activate(undefined, undefined, 'button');
+    sosService.activate();
     toast.success('SOS activated!');
     navigate('/sos-activated');
   };
@@ -94,20 +92,17 @@ const Home: React.FC = () => {
     navigate('/profile');
   };
 
-  const headerHeight = isMobile ? "56px" : "64px";
-  const bottomBarHeight = "64px";
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="bg-[#000000] p-3 md:p-4 flex items-center justify-between z-10" style={{ height: headerHeight }}>
+      <div className="bg-[#000000] p-4 flex items-center justify-between z-10">
         <Button
           variant="ghost"
-          size={isMobile ? "sm" : "icon"}
+          size="icon"
           onClick={() => setIsSidebarOpen(true)}
           className="text-white"
         >
-          <Menu size={isMobile ? 18 : 20} />
+          <Menu size={20} />
         </Button>
         
         <div className="flex-1 flex justify-center">
@@ -115,7 +110,7 @@ const Home: React.FC = () => {
         </div>
         
         <Avatar 
-          className={`${isMobile ? 'h-8 w-8' : 'h-9 w-9'} border-2 border-white cursor-pointer`}
+          className="h-9 w-9 border-2 border-white cursor-pointer"
           onClick={handleProfileClick}
         >
           {avatarUrl ? (
@@ -128,9 +123,7 @@ const Home: React.FC = () => {
         </Avatar>
       </div>
 
-      <div className="flex-1 relative" style={{ 
-        height: `calc(100vh - ${headerHeight} - ${bottomBarHeight})` 
-      }}>
+      <div className="flex-1 relative">
         <MapView 
           satelliteView={true} 
           showMarker={true} 
@@ -139,10 +132,7 @@ const Home: React.FC = () => {
         
         {/* Only show SOS button when sidebar is closed */}
         {!isSidebarOpen && (
-          <SOSButton 
-            onClick={handleSOSPress} 
-            className={`${isMobile ? 'bottom-20' : 'bottom-8'} z-50`} 
-          />
+          <SOSButton onClick={handleSOSPress} className="bottom-8 z-50" />
         )}
       </div>
 

@@ -12,10 +12,7 @@ class HistoryService {
   public async saveSOSHistory(
     location: Location | null,
     message: string,
-    contactIds: string[],
-    triggerType: 'button' | 'codeword' | 'crash' | 'timer' = 'button',
-    codewordUsed: string = '',
-    audioUrl: string = ''
+    contactIds: string[]
   ): Promise<void> {
     if (!this.userId) return;
     
@@ -25,79 +22,13 @@ class HistoryService {
         timestamp: new Date().toISOString(),
         location,
         message,
-        contactIds,
-        triggerType,
-        codewordUsed,
-        audioUrl
+        contactIds
       };
       
-      // Convert Location to a simple object for storage in jsonb column
-      const locationJson = location ? { lat: location.lat, lng: location.lng } : null;
-      
-      // Save to the sos_history table in Supabase
-      const { error } = await supabase
-        .from('sos_history')
-        .insert({
-          user_id: this.userId,
-          timestamp: historyEntry.timestamp,
-          location: locationJson,
-          message: historyEntry.message,
-          contact_ids: historyEntry.contactIds,
-          trigger_type: historyEntry.triggerType,
-          codeword_used: historyEntry.codewordUsed || null,
-          audio_url: historyEntry.audioUrl || null
-        });
-      
-      if (error) throw error;
-      
-      console.log('SOS history saved successfully:', historyEntry);
+      // In a real app, save to a 'sos_history' table
+      console.log('Saving SOS history:', historyEntry);
     } catch (error) {
       console.error('Error saving SOS history:', error);
-    }
-  }
-  
-  public async getSOSHistory(): Promise<SOSHistoryEntry[]> {
-    if (!this.userId) return [];
-    
-    try {
-      // Fetch history from sos_history table
-      const { data, error } = await supabase
-        .from('sos_history')
-        .select('*')
-        .eq('user_id', this.userId)
-        .order('timestamp', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Convert the fetched data to SOSHistoryEntry format
-      return (data || []).map(item => {
-        // Safely handle location data
-        let locationData = null;
-        if (item.location && typeof item.location === 'object') {
-          // Ensure location has the right format
-          if ('lat' in item.location && 'lng' in item.location) {
-            locationData = {
-              lat: parseFloat(String(item.location.lat)),
-              lng: parseFloat(String(item.location.lng))
-            };
-          }
-        }
-        
-        return {
-          id: item.id,
-          userId: item.user_id,
-          timestamp: item.timestamp,
-          location: locationData,
-          message: item.message,
-          contactIds: item.contact_ids,
-          triggerType: item.trigger_type as 'button' | 'codeword' | 'crash' | 'timer',
-          codewordUsed: item.codeword_used || '',
-          audioUrl: item.audio_url || ''
-        };
-      });
-    } catch (error) {
-      console.error('Error fetching SOS history:', error);
-      return [];
     }
   }
 }
