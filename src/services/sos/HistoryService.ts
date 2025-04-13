@@ -78,6 +78,12 @@ class HistoryService {
           }
         }
         
+        // Ensure trigger_type is one of the valid values or default to 'button'
+        let triggerType: 'button' | 'codeword' | 'crash' | 'timer' = 'button';
+        if (item.trigger_type === 'codeword' || item.trigger_type === 'crash' || item.trigger_type === 'timer') {
+          triggerType = item.trigger_type;
+        }
+        
         return {
           id: item.id,
           userId: item.user_id,
@@ -85,7 +91,7 @@ class HistoryService {
           location: locationData,
           message: item.message,
           contactIds: item.contact_ids,
-          triggerType: item.trigger_type,
+          triggerType: triggerType,
           codewordUsed: item.codeword_used,
           audioUrl: item.audio_url
         };
