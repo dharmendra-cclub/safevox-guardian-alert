@@ -72,6 +72,19 @@
   z-index: 100;
 }
 
+/* Responsive SOS button */
+@media (max-width: 768px) {
+  .sos-button {
+    width: 70px;
+    height: 70px;
+    bottom: 72px;
+  }
+  
+  .sos-button span {
+    font-size: 20px;
+  }
+}
+
 .sos-button span {
   color: #934B49;
   font-weight: bold;
@@ -104,6 +117,19 @@
 
 .bottom-bar {
   @apply fixed bottom-0 left-0 right-0 h-16 bg-card flex items-center justify-around border-t border-border z-10;
+}
+
+/* Responsive bottom bar */
+@media (max-width: 768px) {
+  .bottom-bar {
+    height: 56px;
+    padding: 0 8px;
+  }
+  
+  .bottom-bar svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .active-nav-item {

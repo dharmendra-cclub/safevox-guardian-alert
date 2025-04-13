@@ -22,9 +22,13 @@ export interface EmergencyContact {
 
 // SOS history entry
 export interface SOSHistoryEntry {
+  id?: string;
   userId: string;
   timestamp: string;
   location: Location | null;
   message: string;
   contactIds: string[];
+  triggerType?: 'button' | 'codeword' | 'crash' | 'timer';
+  codewordUsed?: string;
+  audioUrl?: string;
 }
