@@ -1,6 +1,5 @@
 
 // Types for SOS service
-import { Json } from "@/integrations/supabase/types";
 
 // Location type
 export interface Location {
@@ -21,18 +20,11 @@ export interface EmergencyContact {
   [key: string]: any;
 }
 
-// SOS history entry type
+// SOS history entry
 export interface SOSHistoryEntry {
-  id?: string;
-  user_id: string;
+  userId: string;
   timestamp: string;
-  location: {
-    lat: number;
-    lng: number;
-  } | null;
+  location: Location | null;
   message: string;
-  contact_ids: string[];
-  trigger_type?: 'button' | 'codeword' | 'crash' | 'timer';
-  codeword_used?: string | null;
-  audio_url?: string | null;
+  contactIds: string[];
 }

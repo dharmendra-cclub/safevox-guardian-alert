@@ -9,8 +9,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { sosService } from '@/services/sos';
 import { audioRecordingService } from '@/services/AudioRecordingService';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import SOSButton from '@/components/SOSButton';
-import BottomNavBar from '@/components/BottomNavBar';
 
 const SOSActivated: React.FC = () => {
   const navigate = useNavigate();
@@ -18,8 +16,6 @@ const SOSActivated: React.FC = () => {
   const [secondsActive, setSecondsActive] = useState(0);
   const [contactsCount, setContactsCount] = useState(0);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [triggerType, setTriggerType] = useState(sosService.getActivationType() || 'button');
-  const [codewordUsed, setCodewordUsed] = useState(sosService.getCodewordUsed() || null);
   
   // Set user ID for services
   useEffect(() => {
@@ -90,16 +86,6 @@ const SOSActivated: React.FC = () => {
     // Use tel: protocol to initiate a call if on a mobile device
     window.location.href = `tel:${phoneNumber}`;
   };
-  
-  const getTriggerTypeText = () => {
-    switch (triggerType) {
-      case 'button': return 'SOS Button';
-      case 'codeword': return codewordUsed ? `Voice Codeword: "${codewordUsed}"` : 'Voice Codeword';
-      case 'crash': return 'Crash Detection';
-      case 'timer': return 'Safety Timer';
-      default: return 'SOS Button';
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -109,9 +95,6 @@ const SOSActivated: React.FC = () => {
         <h1 className="text-xl font-bold text-[#934B49]">SOS Activated!!!</h1>
         <p className="text-sm">
           Alert sent to {contactsCount} emergency contacts ({formatTime(secondsActive)})
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          {getTriggerTypeText()}
         </p>
       </div>
       
@@ -124,7 +107,7 @@ const SOSActivated: React.FC = () => {
         />
         
         {/* Emergency Services */}
-        <div className="absolute bottom-24 left-0 right-0 bg-card/90 backdrop-blur-sm rounded-t-lg p-4 z-10">
+        <div className="absolute bottom-0 left-0 right-0 bg-card/90 backdrop-blur-sm rounded-t-lg p-4 z-10">
           <h2 className="text-lg font-semibold mb-3">Quick call emergency services</h2>
           
           <div className="grid grid-cols-3 gap-3 mb-4">
@@ -194,14 +177,7 @@ const SOSActivated: React.FC = () => {
             Deactivate
           </Button>
         </div>
-
-        <SOSButton 
-          onClick={() => {}} 
-          isActive={true}
-        />
       </div>
-
-      <BottomNavBar />
     </div>
   );
 };

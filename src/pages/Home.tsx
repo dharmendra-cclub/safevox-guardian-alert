@@ -82,8 +82,6 @@ const Home: React.FC = () => {
   };
 
   const handleSOSPress = () => {
-    // Set activation type to button
-    sosService.setActivationType('button');
     sosService.activate();
     toast.success('SOS activated!');
     navigate('/sos-activated');
@@ -130,18 +128,14 @@ const Home: React.FC = () => {
           initialLocation={userLocation || undefined}
         />
         
-        <SOSButton 
-          onClick={handleSOSPress} 
-          hide={isSidebarOpen} 
-        />
+        <SOSButton onClick={handleSOSPress} className="bottom-8 z-50" />
       </div>
 
       <BottomNavBar />
       
       <SideBarMenu 
         isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)}
-        onOpenChange={setIsSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)} 
       />
     </div>
   );

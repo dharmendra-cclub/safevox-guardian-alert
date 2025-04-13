@@ -4,16 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { toast } from 'sonner';
 import MapView from '@/components/map/MapView';
 import SOSButton from '@/components/SOSButton';
 import BottomNavBar from '@/components/BottomNavBar';
 import { sosService } from '@/services/sos';
-import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 const Drive: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [volume, setVolume] = useState([70]);
   const [isDriving, setIsDriving] = useState(true);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -41,16 +39,11 @@ const Drive: React.FC = () => {
       }
     );
 
-    // Load contacts if the user is logged in
-    if (user) {
-      sosService.setUserId(user.id);
-    }
-
     return () => {
       // Clear any timers or listeners when component unmounts
       stopAccidentDetection();
     };
-  }, [user]);
+  }, []);
 
   const startAccidentDetection = () => {
     console.log('Started accident detection simulation');
@@ -82,7 +75,7 @@ const Drive: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="bg-primary p-4 flex items-center justify-center z-10">
+      <div className="bg-safevox-primary p-4 flex items-center justify-center z-10">
         <Button
           variant="ghost"
           size="icon"
@@ -114,15 +107,15 @@ const Drive: React.FC = () => {
           />
         </div>
         
-        {/* Drive Status - Move upward to avoid overlap with SOS button */}
-        <div className="absolute bottom-32 left-0 right-0 bg-card/80 backdrop-blur-sm p-3 z-10">
+        {/* Drive Status */}
+        <div className="absolute bottom-24 left-0 right-0 bg-card/80 backdrop-blur-sm p-3 z-10">
           <p className="text-center text-sm mb-2">
             {isDriving 
               ? 'Driving mode active. Accident detection enabled.' 
               : 'Start driving to enable accident detection.'}
           </p>
           <Button 
-            className={`w-full ${isDriving ? 'bg-orange-500 hover:bg-orange-600' : 'bg-primary hover:bg-primary/90'}`}
+            className={`w-full ${isDriving ? 'bg-orange-500 hover:bg-orange-600' : 'bg-safevox-primary hover:bg-safevox-primary/90'}`}
             onClick={toggleDriving}
           >
             {isDriving ? 'Exit Driving Mode' : 'Start Driving'}
@@ -130,7 +123,7 @@ const Drive: React.FC = () => {
         </div>
         
         {/* SOS Button */}
-        <SOSButton onClick={handleSOSPress} />
+        <SOSButton onClick={handleSOSPress} className="bottom-8 z-50" />
       </div>
 
       {/* Bottom Navigation */}

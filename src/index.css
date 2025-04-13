@@ -66,7 +66,7 @@
   align-items: center;
   justify-content: center;
   position: absolute;
-  bottom: 66px; /* 16px navbar + 50px (half of button size) */
+  bottom: 56px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
@@ -112,28 +112,4 @@
 
 .inactive-nav-item {
   @apply text-muted-foreground;
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .sidebar-item {
-    @apply px-3 py-2;
-  }
-}
-
-@media (min-width: 768px) {
-  .map-container {
-    height: calc(100vh - 64px);
-  }
-}
-
-@media (min-width: 1024px) {
-  .sos-button {
-    width: 100px;
-    height: 100px;
-  }
-  
-  .sos-button span {
-    font-size: 30px;
-  }
 }

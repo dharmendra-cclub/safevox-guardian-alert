@@ -1,8 +1,10 @@
+
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { sosService } from './sos';
 import { CodeWord } from '@/types/voice-activation';
 
+// Define SpeechRecognition interface
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
   resultIndex: number;
@@ -56,6 +58,7 @@ class VoiceRecognitionService {
   private restartTimeout: number | null = null;
   
   constructor() {
+    // Check if browser supports SpeechRecognition
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
       this.recognition = new SpeechRecognitionConstructor() as SpeechRecognition;
@@ -74,6 +77,7 @@ class VoiceRecognitionService {
     if (!this.userId) return;
     
     try {
+      // Fetch custom codewords
       const { data, error } = await supabase
         .from('voice_activations')
         .select('*')
@@ -81,6 +85,7 @@ class VoiceRecognitionService {
       
       if (error) throw error;
       
+      // Transform to CodeWord format
       const customCodeWords: CodeWord[] = data.map(item => ({
         id: item.id,
         word: item.code_word,
@@ -88,6 +93,7 @@ class VoiceRecognitionService {
         contacts: item.contacts || []
       }));
       
+      // Add default codeword
       const defaultCodeWord: CodeWord = {
         id: 'default',
         word: 'Help me now',
@@ -116,9 +122,10 @@ class VoiceRecognitionService {
       
       console.log('Transcript:', transcript);
       
+      // Check if any codeword is in the transcript
       for (const codeWord of this.codeWords) {
         if (transcript.includes(codeWord.word.toLowerCase())) {
-          this.handleCodewordDetection(codeWord.word);
+          this.triggerSOS(codeWord);
           break;
         }
       }
@@ -127,7 +134,9 @@ class VoiceRecognitionService {
     this.recognition.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
       
+      // Only restart if it's not caused by an 'already-running' error
       if (event.error !== 'not-allowed' && this.isListening) {
+        // Use a timeout to avoid immediate restart
         if (this.restartTimeout) {
           clearTimeout(this.restartTimeout);
         }
@@ -135,6 +144,7 @@ class VoiceRecognitionService {
         console.log('Stopped listening for codewords');
         this.isListening = false;
         
+        // Delayed restart
         this.restartTimeout = window.setTimeout(() => {
           if (this.recognition) {
             try {
@@ -152,12 +162,14 @@ class VoiceRecognitionService {
     this.recognition.onend = () => {
       console.log('Speech recognition ended');
       
+      // Restart if still supposed to be listening and not already restarting
       if (this.isListening && !this.restartTimeout) {
         try {
           this.recognition?.start();
           console.log('Restarted listening for codewords');
         } catch (error) {
           console.error('Error restarting speech recognition:', error);
+          // If restart fails, set timeout to try again
           this.isListening = false;
           this.restartTimeout = window.setTimeout(() => {
             this.startListening();
@@ -173,11 +185,13 @@ class VoiceRecognitionService {
       return false;
     }
     
+    // Clear any pending restart
     if (this.restartTimeout) {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;
     }
     
+    // If already listening, don't start again
     if (this.isListening) {
       console.log('Already listening for codewords');
       return true;
@@ -191,6 +205,7 @@ class VoiceRecognitionService {
     } catch (error) {
       console.error('Error starting speech recognition:', error);
       
+      // If failed because already started, mark as listening
       if (error instanceof DOMException && error.name === 'InvalidStateError') {
         this.isListening = true;
         return true;
@@ -203,11 +218,13 @@ class VoiceRecognitionService {
   public stopListening() {
     if (!this.recognition) return false;
     
+    // Clear any pending restart
     if (this.restartTimeout) {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;
     }
     
+    // If not listening, no need to stop
     if (!this.isListening) {
       return true;
     }
@@ -224,31 +241,20 @@ class VoiceRecognitionService {
     }
   }
 
-  private async handleCodewordDetection(keyword: string): Promise<void> {
-    try {
-      const { data, error } = await supabase
-        .from('voice_activations')
-        .select('*')
-        .eq('user_id', this.userId)
-        .eq('code_word', keyword)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      if (data) {
-        console.log(`Detected codeword: ${keyword}`, data);
-        
-        sosService.setActivationType('codeword', keyword);
-        
-        const contactIds = data.contacts || [];
-        
-        sosService.activate(data.message, contactIds.length > 0 ? contactIds : undefined);
-        
-        window.location.href = '/sos-activated';
-      }
-    } catch (error) {
-      console.error('Error handling codeword detection:', error);
-    }
+  private triggerSOS(codeWord: CodeWord) {
+    toast.error(`Codeword detected: "${codeWord.word}"`);
+    console.log('Triggering SOS for codeword:', codeWord);
+    
+    // Stop listening temporarily
+    this.stopListening();
+    
+    // Activate SOS with the codeword message and contacts
+    sosService.activate(codeWord.message, codeWord.contacts);
+    
+    // Resume listening after a short delay
+    setTimeout(() => {
+      this.startListening();
+    }, 5000);
   }
 
   public isRecognitionActive(): boolean {
@@ -256,6 +262,7 @@ class VoiceRecognitionService {
   }
 }
 
+// Add SpeechRecognition types for TypeScript
 declare global {
   interface Window {
     SpeechRecognition: new () => SpeechRecognition;

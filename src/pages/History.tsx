@@ -2,51 +2,59 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Clock, MapPin, Mic, Users, AlertTriangle, Car, MessageCircle, TimerOff } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Mic, Users, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { historyService } from '@/services/sos/HistoryService';
-import { SOSHistoryEntry } from '@/services/sos/types';
-import { contactsService } from '@/services/sos/ContactsService';
-import { EmergencyContact } from '@/services/sos/types';
+
+interface SOSHistoryItem {
+  id: string;
+  timestamp: string;
+  codeword?: string;
+  location: { lat: number; lng: number };
+  audioUrl?: string;
+  contactCount: number;
+}
 
 const History: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [history, setHistory] = useState<SOSHistoryEntry[]>([]);
+  const [history, setHistory] = useState<SOSHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
 
   useEffect(() => {
-    if (user) {
-      loadHistory();
-      loadContacts();
-    }
+    // In a real app, fetch history from database
+    // For now, we'll use mock data
+    const mockHistory: SOSHistoryItem[] = [
+      {
+        id: '1',
+        timestamp: '2025-04-08T14:30:00Z',
+        codeword: 'Help me now',
+        location: { lat: 17.3850, lng: 78.4867 },
+        audioUrl: 'https://safevox.io/recordings/sample1.mp3',
+        contactCount: 3
+      },
+      {
+        id: '2',
+        timestamp: '2025-04-05T18:15:00Z',
+        location: { lat: 17.3880, lng: 78.4850 },
+        audioUrl: 'https://safevox.io/recordings/sample2.mp3',
+        contactCount: 2
+      },
+      {
+        id: '3',
+        timestamp: '2025-04-01T09:45:00Z',
+        codeword: 'Emergency',
+        location: { lat: 17.3820, lng: 78.4890 },
+        audioUrl: 'https://safevox.io/recordings/sample3.mp3',
+        contactCount: 1
+      }
+    ];
+    
+    setHistory(mockHistory);
+    setLoading(false);
   }, [user]);
-
-  const loadHistory = async () => {
-    try {
-      setLoading(true);
-      const historyData = await historyService.getSOSHistory();
-      setHistory(historyData);
-    } catch (error) {
-      console.error('Error loading history:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadContacts = async () => {
-    try {
-      const contactsData = await contactsService.fetchEmergencyContacts();
-      setContacts(contactsData);
-    } catch (error) {
-      console.error('Error loading contacts:', error);
-    }
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -69,48 +77,6 @@ const History: React.FC = () => {
     window.open(url, '_blank');
   };
 
-  const getContactNames = (contactIds: string[]) => {
-    const names = contactIds.map(id => {
-      const contact = contacts.find(c => c.id === id);
-      return contact ? contact.name : 'Unknown';
-    });
-    
-    if (names.length === 0) return 'No contacts';
-    if (names.length === 1) return names[0];
-    if (names.length === 2) return `${names[0]} and ${names[1]}`;
-    return `${names[0]} and ${names.length - 1} others`;
-  };
-
-  const getTriggerIcon = (triggerType?: string) => {
-    switch (triggerType) {
-      case 'button':
-        return <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />;
-      case 'codeword':
-        return <MessageCircle className="h-4 w-4 mr-2 text-blue-500" />;
-      case 'crash':
-        return <Car className="h-4 w-4 mr-2 text-orange-500" />;
-      case 'timer':
-        return <TimerOff className="h-4 w-4 mr-2 text-purple-500" />;
-      default:
-        return <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />;
-    }
-  };
-
-  const getTriggerLabel = (triggerType?: string) => {
-    switch (triggerType) {
-      case 'button':
-        return 'SOS Button';
-      case 'codeword':
-        return 'Voice Codeword';
-      case 'crash':
-        return 'Crash Detection';
-      case 'timer':
-        return 'Safety Timer';
-      default:
-        return 'SOS Button';
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -129,7 +95,7 @@ const History: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4 pb-20 sm:pb-4">
+      <div className="flex-1 p-4">
         {loading ? (
           <div className="text-center py-8">Loading history...</div>
         ) : history.length === 0 ? (
@@ -138,55 +104,38 @@ const History: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {history.map((item, index) => (
-              <div key={index} className="bg-card rounded-lg p-4 shadow-sm">
+            {history.map((item) => (
+              <div key={item.id} className="bg-card rounded-lg p-4 shadow-sm">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                     <span className="text-sm">{formatDate(item.timestamp)}</span>
                   </div>
-                  
-                  <Badge 
-                    className={`
-                      ${item.trigger_type === 'button' ? 'bg-red-500/20 text-red-500' : ''}
-                      ${item.trigger_type === 'codeword' ? 'bg-blue-500/20 text-blue-500' : ''}
-                      ${item.trigger_type === 'crash' ? 'bg-orange-500/20 text-orange-500' : ''}
-                      ${item.trigger_type === 'timer' ? 'bg-purple-500/20 text-purple-500' : ''}
-                    `}
-                  >
-                    {getTriggerIcon(item.trigger_type)}
-                    {getTriggerLabel(item.trigger_type)}
-                  </Badge>
+                  {item.codeword && (
+                    <div className="bg-primary/10 text-primary px-2 py-1 rounded text-xs">
+                      {item.codeword}
+                    </div>
+                  )}
                 </div>
-                
-                <p className="text-sm mt-2">{item.message}</p>
-                
-                {item.codeword_used && (
-                  <div className="mt-2 text-sm text-blue-400">
-                    <span>Codeword: "{item.codeword_used}"</span>
-                  </div>
-                )}
                 
                 <Separator className="my-3" />
                 
                 <div className="grid grid-cols-2 gap-3 mt-3">
-                  {item.location && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="flex items-center justify-center"
-                      onClick={() => openLocationLink(item.location as {lat: number, lng: number})}
-                    >
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span>View Location</span>
-                    </Button>
-                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex items-center justify-center"
+                    onClick={() => openLocationLink(item.location)}
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <span>View Location</span>
+                  </Button>
                   
                   <Button 
                     variant="outline" 
                     size="sm"
                     className="flex items-center justify-center"
-                    onClick={() => playAudio(item.audio_url)}
+                    onClick={() => playAudio(item.audioUrl)}
                   >
                     <Mic className="h-4 w-4 mr-2" />
                     <span>Play Recording</span>
@@ -195,7 +144,7 @@ const History: React.FC = () => {
                 
                 <div className="mt-3 text-sm text-muted-foreground flex items-center">
                   <Users className="h-4 w-4 mr-2" />
-                  <span>Alerted {getContactNames(item.contact_ids)}</span>
+                  <span>Alerted {item.contactCount} emergency contacts</span>
                 </div>
               </div>
             ))}
