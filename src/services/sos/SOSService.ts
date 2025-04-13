@@ -45,12 +45,7 @@ class SOSService {
     return contactsService.fetchEmergencyContacts();
   }
 
-  public async activate(
-    message?: string, 
-    specificContactIds?: string[], 
-    triggerType: 'button' | 'codeword' | 'crash' | 'timer' = 'button',
-    codewordUsed?: string
-  ): Promise<boolean> {
+  public async activate(message?: string, specificContactIds?: string[]): Promise<boolean> {
     if (this.isActivated) return true;
     
     try {
@@ -78,10 +73,7 @@ class SOSService {
       await historyService.saveSOSHistory(
         location, 
         message || 'Emergency! I need help!', 
-        contactsToNotify.map(c => c.id),
-        triggerType,
-        codewordUsed,
-        audioStreamingUrl
+        contactsToNotify.map(c => c.id)
       );
       
       this.isActivated = true;
@@ -126,7 +118,7 @@ class SOSService {
     toast.error('Accident detected!');
     
     // Activate SOS with a specific message for accident
-    this.activate('Accident detected! Need immediate help!', undefined, 'crash');
+    this.activate('Accident detected! Need immediate help!');
   }
 
   public isSOSActivated(): boolean {
