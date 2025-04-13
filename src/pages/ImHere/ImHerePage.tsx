@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import MapView from '@/components/map/MapView';
 import { useAuth } from '@/hooks/useAuth';
 import { sosService } from '@/services/sos';
+import { locationService } from '@/services/sos';
 import { Contact } from './types';
 import ContactSelector from './components/ContactSelector';
 import LocationShareButton from './components/LocationShareButton';
@@ -22,26 +23,51 @@ const ImHerePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   
+  // Function to fetch user location
+  const fetchUserLocation = async () => {
+    try {
+      // First try to get cached location from the service
+      let location = locationService.getLocation();
+      
+      // If no cached location, actively request it
+      if (!location) {
+        location = await locationService.getCurrentLocation();
+      }
+      
+      if (location) {
+        setUserLocation(location);
+      } else {
+        toast.error("Could not get your location. Please check permissions.");
+      }
+    } catch (error) {
+      console.error("Error getting location:", error);
+      toast.error("Could not get your location. Please check permissions.");
+    }
+  };
+  
   useEffect(() => {
     if (user) {
       sosService.setUserId(user.id);
       fetchContacts();
     }
     
-    // Get current location
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-      },
-      (error) => {
-        console.error("Error getting location:", error);
-        toast.error("Could not get your location. Please check permissions.");
-      }
-    );
+    // Fetch location on component mount
+    fetchUserLocation();
+    
+    // Add an event listener for when the page becomes visible again
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user]);
+  
+  // Handle visibility change to update location when user returns to the tab/app
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      fetchUserLocation();
+    }
+  };
   
   const fetchContacts = async () => {
     setLoading(true);
@@ -73,6 +99,9 @@ const ImHerePage: React.FC = () => {
   };
   
   const handleSendLocation = async () => {
+    // Re-fetch location just before sending to ensure we have the latest
+    await fetchUserLocation();
+    
     if (!userLocation) {
       toast.error('Location not available');
       return;
