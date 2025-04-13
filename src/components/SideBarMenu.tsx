@@ -17,6 +17,36 @@ interface SideBarMenuProps {
 const SideBarMenu: React.FC<SideBarMenuProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [userProfile, setUserProfile] = React.useState<{
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null>(null);
+  
+  React.useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+  
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        setUserProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
   
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -33,19 +63,32 @@ const SideBarMenu: React.FC<SideBarMenuProps> = ({ isOpen, onClose }) => {
     }
   };
   
+  const getInitials = () => {
+    if (userProfile?.full_name) {
+      return userProfile.full_name
+        .split(' ')
+        .map(part => part[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    }
+    
+    return user?.email?.charAt(0).toUpperCase() || 'U';
+  };
+  
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="left" className="p-0 w-[85vw] max-w-sm">
         <div className="bg-primary-foreground bg-[#000000] p-4">
           <SheetHeader className="text-left pb-4">
             <Avatar className="h-16 w-16 border-2 border-white mb-2">
-              <AvatarImage src={user?.avatar_url || ''} alt="Profile" />
+              <AvatarImage src={userProfile?.avatar_url || ''} alt="Profile" />
               <AvatarFallback className="bg-primary text-white text-xl">
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
+                {getInitials()}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="text-lg font-semibold text-white">{user?.name || 'User'}</h2>
+              <h2 className="text-lg font-semibold text-white">{userProfile?.full_name || 'User'}</h2>
               <p className="text-sm text-gray-300 truncate max-w-[calc(85vw-4rem)]">{user?.email}</p>
             </div>
           </SheetHeader>

@@ -5,6 +5,7 @@
 export interface Location {
   lat: number;
   lng: number;
+  [key: string]: any; // Add index signature to make it compatible with Json type
 }
 
 // Emergency contact type from database
