@@ -26,6 +26,7 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import History from "./pages/History";
+import LiveTrackingPage from "./components/sos/LiveTrackingPage";
 import React from 'react';
 
 // Create a new QueryClient instance outside of the component
@@ -47,6 +48,9 @@ const App = () => {
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/permissions" element={<Permissions />} />
+                  
+                  {/* Public tracking route - accessible without auth */}
+                  <Route path="/track" element={<LiveTrackingPage />} />
                   
                   {/* Protected routes */}
                   <Route path="/home" element={<AuthRoute><Home /></AuthRoute>} />

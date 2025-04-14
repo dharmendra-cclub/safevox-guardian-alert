@@ -77,6 +77,9 @@ const Permissions: React.FC = () => {
         }
       }
 
+      // Store that permissions have been granted
+      localStorage.setItem('permissionsGranted', 'true');
+      
       toast.success('Permissions granted successfully');
       navigate('/home');
     } catch (error) {
