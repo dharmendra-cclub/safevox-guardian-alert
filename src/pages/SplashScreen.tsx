@@ -7,19 +7,12 @@ import Logo from '@/components/Logo';
 const SplashScreen: React.FC = () => {
   const navigate = useNavigate();
 
-  // Check for user authentication and permissions on mount
+  // If user is already authenticated, redirect to home
   useEffect(() => {
-    // Check if user is already logged in from localStorage
+    // Check if user is already logged in in localStorage
     const user = localStorage.getItem('user');
-    // Check if permissions were already granted
-    const permissionsGranted = localStorage.getItem('permissionsGranted');
-
-    if (user && permissionsGranted === 'true') {
-      // If both user and permissions are available, go directly to home
+    if (user) {
       navigate('/home');
-    } else if (user && !permissionsGranted) {
-      // If user exists but permissions not granted, go to permissions page
-      navigate('/permissions');
     }
   }, [navigate]);
 

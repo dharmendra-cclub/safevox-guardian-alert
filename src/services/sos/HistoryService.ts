@@ -1,19 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Location } from './types';
-
-interface SOSHistoryEntry {
-  id: string;
-  userId: string;
-  timestamp: string;
-  location: Location | null;
-  message: string;
-  contactIds: string[];
-  triggerType: 'button' | 'codeword' | 'crash' | 'timer';
-  codewordUsed?: string;
-  audioUrl?: string;
-  trackingId?: string; // New field for tracking URL
-}
+import { Location, SOSHistoryEntry } from './types';
 
 class HistoryService {
   private userId: string | null = null;
@@ -28,34 +15,38 @@ class HistoryService {
     contactIds: string[],
     triggerType: 'button' | 'codeword' | 'crash' | 'timer' = 'button',
     codewordUsed: string = '',
-    audioUrl: string = '',
-    trackingId: string = ''
-  ): Promise<boolean> {
-    if (!this.userId) return false;
+    audioUrl: string = ''
+  ): Promise<void> {
+    if (!this.userId) return;
     
     try {
+      // Convert the Location object to a format suitable for Supabase jsonb column
+      const locationData = location ? {
+        lat: location.lat,
+        lng: location.lng
+      } : null;
+      
+      // Create record in Supabase
       const { error } = await supabase
         .from('sos_history')
         .insert({
           user_id: this.userId,
-          location: location ? location : null,
-          message: message,
+          timestamp: new Date().toISOString(),
+          location: locationData,
+          message,
           contact_ids: contactIds,
           trigger_type: triggerType,
           codeword_used: codewordUsed || null,
-          audio_url: audioUrl || null,
-          tracking_id: trackingId || null
+          audio_url: audioUrl || null
         });
-      
+        
       if (error) {
-        console.error('Error saving SOS history:', error);
-        return false;
+        throw error;
       }
       
-      return true;
+      console.log('SOS history saved successfully');
     } catch (error) {
       console.error('Error saving SOS history:', error);
-      return false;
     }
   }
 
@@ -68,37 +59,41 @@ class HistoryService {
         .select('*')
         .eq('user_id', this.userId)
         .order('timestamp', { ascending: false });
-      
+        
       if (error) {
-        console.error('Error fetching SOS history:', error);
-        return [];
+        throw error;
       }
       
-      // Map the database entries to our application type
-      // Ensure triggerType is one of the allowed literal types
-      return data.map(entry => {
-        // Validate the trigger_type value and default to 'button' if invalid
+      // Transform data from DB format to our app format
+      return data.map(item => {
+        // Parse location data from jsonb format
+        let locationData: Location | null = null;
+        if (item.location && typeof item.location === 'object') {
+          const loc = item.location as { lat: number; lng: number };
+          if (loc.lat !== undefined && loc.lng !== undefined) {
+            locationData = {
+              lat: loc.lat,
+              lng: loc.lng
+            };
+          }
+        }
+        
+        // Ensure trigger_type is one of the valid values or default to 'button'
         let triggerType: 'button' | 'codeword' | 'crash' | 'timer' = 'button';
-        if (
-          entry.trigger_type === 'button' || 
-          entry.trigger_type === 'codeword' || 
-          entry.trigger_type === 'crash' || 
-          entry.trigger_type === 'timer'
-        ) {
-          triggerType = entry.trigger_type;
+        if (item.trigger_type === 'codeword' || item.trigger_type === 'crash' || item.trigger_type === 'timer') {
+          triggerType = item.trigger_type;
         }
         
         return {
-          id: entry.id,
-          userId: entry.user_id,
-          timestamp: entry.timestamp,
-          location: entry.location,
-          message: entry.message,
-          contactIds: entry.contact_ids,
+          id: item.id,
+          userId: item.user_id,
+          timestamp: item.timestamp,
+          location: locationData,
+          message: item.message,
+          contactIds: item.contact_ids,
           triggerType: triggerType,
-          codewordUsed: entry.codeword_used,
-          audioUrl: entry.audio_url,
-          trackingId: entry.tracking_id
+          codewordUsed: item.codeword_used,
+          audioUrl: item.audio_url
         };
       });
     } catch (error) {
